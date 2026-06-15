@@ -1,0 +1,12 @@
+node_modules/
+test-results/
+*.log*
+.idea/
+
+ecad/
+temp_objs/
+*.idx
+*.xml
+*.obj
+*.mtl
+*.prt
