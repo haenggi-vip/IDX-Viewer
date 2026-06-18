@@ -22,6 +22,7 @@
 
         // --- 2. DATA STATE ---
         let originalXmlDoc = null, allComponents = [], hintMap = {}, useMCADNames = false, originalFileName = "export.idx", loadedOBJFiles = [];
+        window.allComponents = allComponents;
         let incrementHistory = [], currentHistoryStep = -1, baselineComponents = [];
         let manualCount = 0;
 
@@ -416,7 +417,15 @@
                                         else if (circles[elId]) { const cp = points[circles[elId].centerId]; if (cp) circs.push({ cx: cp.x*xx+cp.y*xy, cy: cp.x*yx+cp.y*yy, radius: circles[elId].radius*Math.abs(xx) }); }
                                     });
                                     if (currentP.length > 0) polys.push(currentP);
-                                    const isBottom = (getNS(inst,"AssembleToName")[0]?.textContent || "").toUpperCase() === "BOTTOM";
+                                    const itemNode = inst.closest('Item') || inst.parentElement;
+                                    const assembleNode = getNS(inst, "AssembleToName")[0] || getNS(itemNode, "AssembleToName")[0] || getNS(inst, "Layer")[0] || getNS(itemNode, "Layer")[0];
+                                    let assembleText = (assembleNode?.textContent || "").toUpperCase();
+                                    getNS(inst, "UserProperty").forEach(up => {
+                                        const k = getNS(up, "ObjectName")[0]?.textContent;
+                                        const v = getNS(up, "Value")[0]?.textContent;
+                                        if (k === "SIDE" && v) assembleText = v.toUpperCase();
+                                    });
+                                    const isBottom = assembleText === "BOTTOM" || assembleText === "SECONDARY" || (xx * yy - xy * yx < -0.5);
                                     allComponents.push({ uid: uid || `COMP_INC_${allComponents.length}`, name, refDes: (getNS(inst,"Name")[0]||getNS(inst,"ObjectName")[0])?.textContent||"Unknown", partNumber: sItem.number, x, y, z: z-bZ, origX: x, origY: y, origZ: z-bZ, thickness: cs.thickness, polygons: polys, circles: circs, isBoard: false, isBottom, type: shape.type, isVisible: true, isDeleted: false, isIncrementallyAdded: isHighlightStep });
                                     if (isHighlightStep) stepChanges.push(`Hinzugefügt: ${name}`);
                                 }
@@ -453,7 +462,7 @@
                 if (allComponents.length > 0) {
                     const affected = allComponents.filter(c => hintMap[c.name] || hintMap[c.partNumber]);
                     const report = new Set(affected.map(c => `${c.name} (${c.partNumber}) -> ${hintMap[c.name] || hintMap[c.partNumber]}`));
-                    console.log("MCAD Mapping Report generated");
+                    showReportModal(report, [], affected.length, allComponents.length, [], "MCAD Mapping Report");
                     build3DScene(allComponents, 1.6);
                 }
                 if (loadedOBJFiles.length > 0) processOBJFiles(loadedOBJFiles, true);
@@ -487,7 +496,46 @@
                 else { unmatched.push(baseName); }
                 count++; pB.style.width = (count/files.length)*100 + '%'; pT.innerText = `Lade ${count}/${files.length}...`;
             }
-            setTimeout(() => { pC.style.display = 'none'; console.log("OBJ mapping report generated"); }, 500);
+            setTimeout(() => { pC.style.display = 'none'; if (!silent) showReportModal(replaced, unmatched, files.length, allSelectedFiles.length, ignoredFiles); }, 500);
+        }
+
+        function showReportModal(replaced, unmatched, totalOBJ, totalSelected, ignored, title = "Import Report") {
+            const existing = document.getElementById('report-modal'); if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'report-modal';
+            modal.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; max-height: 80vh; background: #2f3640; border: 1px solid #0fbcf9; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; color: #d2dae2; font-family: sans-serif;';
+
+            let html = `
+                <div style="padding: 15px; background: #1e272e; border-bottom: 1px solid #485460; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 16px; color: #0fbcf9;">${title}</h3>
+                    <button id="close-report-btn" class="action-btn" style="background: #e74c3c; border:none; color:white; padding:5px 10px; border-radius:4px; cursor:pointer;">Schließen</button>
+                </div>
+                <div style="padding: 20px; overflow-y: auto; font-size: 13px;">
+                    <div style="margin-bottom: 15px;">
+                        <strong>Zusammenfassung:</strong><br>
+                        ${totalSelected !== undefined ? `- Gesamt verarbeitet: ${totalSelected}<br>` : ''}
+                        ${totalOBJ !== undefined ? `- Davon relevant: ${totalOBJ}<br>` : ''}
+                        ${ignored && ignored.length ? `- Ignoriert: ${ignored.length}<br>` : ''}
+                    </div>
+                    ${replaced && replaced.size ? `
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #27ae60;">Erfolgreich zugeordnet (${replaced.size}):</strong>
+                        <ul style="margin: 5px 0; padding-left: 20px; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">
+                            ${Array.from(replaced).sort().map(r => `<li style="margin-bottom:2px;">${r}</li>`).join('')}
+                        </ul>
+                    </div>` : ''}
+                    ${unmatched && unmatched.length ? `
+                    <div>
+                        <strong style="color: #e67e22;">Nicht zugeordnet (${unmatched.length}):</strong>
+                        <ul style="margin: 5px 0; padding-left: 20px; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">
+                            ${unmatched.sort().map(u => `<li style="margin-bottom:2px;">${u}</li>`).join('')}
+                        </ul>
+                    </div>` : ''}
+                </div>
+            `;
+            modal.innerHTML = html;
+            document.body.appendChild(modal);
+            document.getElementById('close-report-btn').onclick = () => modal.remove();
         }
 
         function getNS(node, tag) { if (!node) return []; return Array.from(node.getElementsByTagNameNS("*", tag)); }
@@ -528,11 +576,21 @@
                     const refDes = getNS(inst,"Name")[0]?.textContent || "";
                     const instNameNode = getNS(inst,"InstanceName")[0];
                     const instName = instNameNode ? getNS(instNameNode,"ObjectName")[0]?.textContent || "" : "";
-                    const name = refDes || instName || "Unknown", isBottom = (getNS(inst,"AssembleToName")[0]?.textContent || "").toUpperCase() === "BOTTOM";
+                    const name = refDes || instName || "Unknown";
+                    
                     const tx = getNS(inst,"tx")[0], ty = getNS(inst,"ty")[0], tz = getNS(inst,"tz")[0];
                     let x = parseFloat(getNS(tx, "Value")[0]?.textContent || 0), y = parseFloat(getNS(ty, "Value")[0]?.textContent || 0), z = parseFloat(getNS(tz, "Value")[0]?.textContent || 0);
                     const nXX = getNS(inst,"xx")[0], nXY = getNS(inst,"xy")[0], nYX = getNS(inst,"yx")[0], nYY = getNS(inst,"yy")[0];
                     let xx = nXX ? parseFloat(nXX.textContent) : 1, xy = nXY ? parseFloat(nXY.textContent) : 0, yx = nYX ? parseFloat(nYX.textContent) : 0, yy = nYY ? parseFloat(nYY.textContent) : 1;
+                    
+                    const assembleNode = getNS(inst, "AssembleToName")[0] || getNS(item, "AssembleToName")[0] || getNS(inst, "Layer")[0] || getNS(item, "Layer")[0];
+                    let assembleText = (assembleNode?.textContent || "").toUpperCase();
+                    getNS(inst, "UserProperty").forEach(up => {
+                        const k = getNS(up, "ObjectName")[0]?.textContent;
+                        const v = getNS(up, "Value")[0]?.textContent;
+                        if (k === "SIDE" && v) assembleText = v.toUpperCase();
+                    });
+                    const isBottom = assembleText === "BOTTOM" || assembleText === "SECONDARY" || (xx * yy - xy * yx < -0.5);
                     const sRef = getNS(inst,"Item")[0]?.textContent;
                     if (sRef && singleItems[sRef]) {
                         const sItem = singleItems[sRef], shape = shapes[sItem.shapeId];
