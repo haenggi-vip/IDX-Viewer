@@ -1,11 +1,13 @@
 # Webbasierter 3D IDX Viewer
 
+[![GitHub Pages](https://img.shields.io/badge/Live_Demo-GitHub_Pages-blue?style=for-the-badge)](https://niclas85.github.io/IDX-Viewer/)
+
 Dies ist ein leistungsstarker, rein webbasierter 3D-Viewer und Editor für das **Prostep IVIP (PSI5) ECAD/MCAD Collaboration Format (IDX v4.5)**.
 
 Das Tool ermöglicht die Visualisierung von Leiterplatten-Baselines (Base-Modellen) und deren inkrementellen Änderungen (Increments). MCAD/ECAD-Ingenieure können Änderungen grafisch nachvollziehen, diese akzeptieren oder ablehnen, sowie eigene manuelle Gegenvorschläge (Verschiebungen, Hinzufügungen, Löschungen) erarbeiten. 
 Anschließend exportiert das Tool normgerechte IDX-Responses, um den digitalen Kommunikationszyklus zwischen den Disziplinen nahtlos fortzusetzen.
 
-![Viewer Screenshot](docs/screenshots/01_initial.png)
+![Viewer Screenshot](docs/screenshots/loaded_idx.png)
 
 ## 🚀 Hauptfunktionen
 
