@@ -110,6 +110,40 @@
             color: white; font-size: 20px; font-weight: bold; background: rgba(0,0,0,0.85);
             padding: 20px 40px; border-radius: 8px; display: none; z-index: 20; border: 1px solid #0fbcf9;
         }
+
+        #help-btn { background: #087ca7; }
+        #help-btn:hover { background: #0fbcf9; }
+        #help-modal {
+            position: fixed; inset: 0; z-index: 2500; display: none;
+            align-items: center; justify-content: center; padding: 18px;
+            background: rgba(7, 13, 18, 0.82); box-sizing: border-box;
+        }
+        #help-modal.open { display: flex; }
+        .help-dialog {
+            width: min(1440px, 100%); height: min(920px, 100%);
+            display: flex; flex-direction: column; overflow: hidden;
+            border: 1px solid #5f7180; border-radius: 10px;
+            background: #ffffff; box-shadow: 0 18px 60px rgba(0,0,0,0.7);
+        }
+        .help-dialog-header {
+            min-height: 46px; display: flex; align-items: center;
+            justify-content: space-between; gap: 12px; padding: 7px 12px;
+            color: #ffffff; background: #1e272e;
+            border-bottom: 2px solid #0fbcf9;
+        }
+        .help-dialog-header h2 {
+            margin: 0; font-size: 15px; letter-spacing: 0.3px;
+        }
+        #help-close-btn {
+            min-width: 36px; min-height: 32px; justify-content: center;
+            background: #a93226; font-size: 16px;
+        }
+        #help-close-btn:hover { background: #e74c3c; }
+        #help-frame { flex: 1; width: 100%; border: 0; background: #ffffff; }
+        @media (max-width: 760px) {
+            #help-modal { padding: 0; }
+            .help-dialog { width: 100%; height: 100%; border: 0; border-radius: 0; }
+        }
     </style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -147,6 +181,7 @@
             <div style="display:flex; gap:5px;">
                 <button id="iso-btn" class="action-btn" title="ISO Ansicht">📐 ISO</button>
                 <button id="fullscreen-btn" class="action-btn" title="Vollbildmodus">⛶ Vollbild</button>
+                <button id="help-btn" class="action-btn" type="button" title="Anwenderhilfe öffnen" aria-haspopup="dialog">? Hilfe</button>
             </div>
             <div style="display:flex; gap:5px;">
                 <button id="export-inc-btn" class="action-btn" style="background:#e67e22; color:white;" title="Erstellt eine _increment.idx">💾 Inkrement</button>
@@ -275,6 +310,17 @@
                 </label>
                 <button id="run-macro-btn" class="action-btn" style="background: #8e44ad; padding: 5px 15px; margin: 0;" onclick="document.getElementById('macro-modal').style.display='none'">▶ Ausführen</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ANWENDERHILFE -->
+    <div id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-dialog-title">
+        <div class="help-dialog">
+            <div class="help-dialog-header">
+                <h2 id="help-dialog-title">IDX Viewer – Anwenderhilfe</h2>
+                <button id="help-close-btn" class="action-btn" type="button" aria-label="Hilfe schließen" title="Hilfe schließen">✕</button>
+            </div>
+            <iframe id="help-frame" title="IDX Viewer Anwenderdokumentation" src="docs/help.html" loading="lazy"></iframe>
         </div>
     </div>
 
@@ -1582,6 +1628,54 @@ function handleSelection(id, ctrl, shift) {
                 }
             }
         });
+
+        // --- INTEGRIERTE ANWENDERHILFE ---
+        const helpButton = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const helpCloseButton = document.getElementById('help-close-btn');
+        const helpHash = '#hilfe';
+        let helpPreviousFocus = null;
+
+        function openHelp(updateUrl = true) {
+            helpPreviousFocus = document.activeElement;
+            helpModal.classList.add('open');
+            helpCloseButton.focus();
+            if (updateUrl && window.location.hash.toLowerCase() !== helpHash) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search + helpHash);
+            }
+        }
+
+        function closeHelp(updateUrl = true) {
+            if (!helpModal.classList.contains('open')) return;
+            helpModal.classList.remove('open');
+            if (updateUrl && window.location.hash.toLowerCase() === helpHash) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+            if (helpPreviousFocus && typeof helpPreviousFocus.focus === 'function') {
+                helpPreviousFocus.focus();
+            }
+        }
+
+        helpButton.addEventListener('click', openHelp);
+        helpCloseButton.addEventListener('click', closeHelp);
+        helpModal.addEventListener('click', event => {
+            if (event.target === helpModal) closeHelp();
+        });
+        window.addEventListener('message', event => {
+            if (event.data === 'idx-help-close') closeHelp();
+        });
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
+            else closeHelp(false);
+        });
+        window.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && helpModal.classList.contains('open')) {
+                event.preventDefault();
+                event.stopPropagation();
+                closeHelp();
+            }
+        }, true);
+        if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
 
 </script>
 </body>

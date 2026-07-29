@@ -1,6 +1,7 @@
 # Webbasierter 3D IDX Viewer
 
 [![GitHub Pages](https://img.shields.io/badge/Live_Demo-GitHub_Pages-blue?style=for-the-badge)](https://niclas85.github.io/IDX-Viewer/)
+[![Direkthilfe](https://img.shields.io/badge/Hilfe-Direkt_oeffnen-0fbcf9?style=for-the-badge)](https://niclas85.github.io/IDX-Viewer/#hilfe)
 
 Dies ist ein leistungsstarker, rein webbasierter 3D-Viewer und Editor für das **Prostep IVIP (PSI5) ECAD/MCAD Collaboration Format (IDX v4.5)**.
 
