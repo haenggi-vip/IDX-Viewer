@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IDX Viewer – Hilfe</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --muted: #5f6d79;
+      --line: #d8e0e6;
+      --panel: #f4f7f9;
+      --accent: #087ca7;
+      --accent-dark: #075d7b;
+      --warning: #fff5cc;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font: 15px/1.58 "Segoe UI", Arial, sans-serif;
+    }
+    .help-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 58px;
+      padding: 9px 18px;
+      color: #fff;
+      background: #1e272e;
+      border-bottom: 3px solid #0fbcf9;
+    }
+    .help-topbar strong { font-size: 18px; letter-spacing: .01em; }
+    .help-topbar span { color: #b9c5ce; font-size: 13px; }
+    .help-topbar-actions { display: flex; gap: 8px; margin-left: auto; }
+    .help-topbar a, .help-topbar button {
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 1px solid #63717c;
+      border-radius: 6px;
+      color: #fff;
+      background: #34424d;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .help-topbar a:hover, .help-topbar button:hover {
+      background: #087ca7;
+      border-color: #0fbcf9;
+    }
+    .help-layout {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 920px);
+      justify-content: center;
+      gap: 34px;
+      padding: 28px 28px 72px;
+    }
+    .help-nav {
+      position: sticky;
+      top: 86px;
+      align-self: start;
+      max-height: calc(100vh - 112px);
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+    .help-nav strong {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--accent-dark);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .help-nav a {
+      display: block;
+      padding: 5px 8px;
+      border-radius: 5px;
+      color: #334451;
+      font-size: 13px;
+      line-height: 1.25;
+      text-decoration: none;
+    }
+    .help-nav a:hover, .help-nav a.active {
+      color: #fff;
+      background: var(--accent);
+    }
+    .help-article { min-width: 0; }
+    .help-article h1 {
+      margin: 0 0 4px;
+      color: #132a3a;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.08;
+    }
+    .help-article h2 {
+      scroll-margin-top: 82px;
+      margin: 50px 0 14px;
+      padding-bottom: 8px;
+      color: #163b52;
+      border-bottom: 2px solid #bad7e3;
+      font-size: 25px;
+      line-height: 1.2;
+    }
+    .help-article h3 {
+      scroll-margin-top: 82px;
+      margin: 30px 0 9px;
+      color: var(--accent-dark);
+      font-size: 19px;
+    }
+    .help-article h4 { color: #294b5f; }
+    .help-article p { margin: 8px 0 13px; }
+    .help-article li { margin: 4px 0; }
+    .help-article a { color: #087ca7; }
+    .help-article code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #733c00;
+      background: #fff0d8;
+      font: 13px Consolas, monospace;
+    }
+    .help-article pre {
+      overflow: auto;
+      padding: 14px 16px;
+      border: 1px solid #d7dde2;
+      border-radius: 8px;
+      background: #f3f5f7;
+    }
+    .help-article pre code { padding: 0; color: #26333d; background: none; }
+    .help-article table {
+      width: 100%;
+      margin: 14px 0 22px;
+      border-spacing: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .help-article th, .help-article td {
+      padding: 9px 11px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    .help-article th { color: #163b52; background: #e6f1f5; }
+    .help-article tr:last-child td { border-bottom: 0; }
+    .help-article th:last-child, .help-article td:last-child { border-right: 0; }
+    .help-image-link {
+      display: block;
+      margin: 19px 0 28px;
+      border: 1px solid #b8c7d1;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(21, 47, 63, .12);
+      background: #eef3f6;
+    }
+    .help-image-link img { display: block; width: 100%; height: auto; }
+    .help-image-link:focus { outline: 3px solid #0fbcf9; outline-offset: 3px; }
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #e0b420;
+      background: var(--warning);
+    }
+    @media (max-width: 900px) {
+      .help-layout { grid-template-columns: 1fr; padding: 18px 16px 60px; }
+      .help-nav { position: static; max-height: 240px; }
+      .help-topbar span { display: none; }
+    }
+    @media (max-width: 600px) {
+      .help-topbar { align-items: flex-start; flex-wrap: wrap; }
+      .help-topbar-actions { width: 100%; margin-left: 0; }
+      .help-topbar a, .help-topbar button { flex: 1; text-align: center; }
+      .help-article table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="help-topbar">
+    <strong>IDX Viewer Hilfe</strong>
+    <span>Praxisorientierte Bedienungsanleitung mit Klickmarkierungen</span>
+    <div class="help-topbar-actions">
+      <a href="Anwenderdokumentation.docx" download>Word-Dokument herunterladen</a>
+      <button id="close-help" type="button">Hilfe schließen</button>
+    </div>
+  </header>
+  <div class="help-layout">
+    <nav class="help-nav" aria-label="Hilfethemen">
+      <strong>Hilfethemen</strong>
+      <div id="help-navigation"></div>
+    </nav>
+    <main class="help-article"><h1 id="anwenderdokumentation">Anwenderdokumentation</h1>
+<h2 id="advanced-3d-idx-viewer">Advanced 3D IDX Viewer</h2>
+<p><strong>Dokumentstand:</strong> 29. Juli 2026<br><strong>Anwendung:</strong> <code>idx.html</code></p>
+<p>Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.</p>
+<p>Technische Details zum IDX-Datenmodell sind bewusst auf ein Minimum reduziert. Im Mittelpunkt stehen die Fragen:</p>
+<ul>
+<li>Wie lade ich eine Leiterplatte?</li>
+<li>Wie prüfe ich Änderungen?</li>
+<li>Wie finde und bearbeite ich Bauteile?</li>
+<li>Was ist der Unterschied zwischen Ausblenden und Löschen?</li>
+<li>Wie exportiere ich mein Ergebnis?</li>
+<li>Was muss ich vor der Weitergabe kontrollieren?</li>
+</ul>
+<p>Eine ausführlichere technische Beschreibung befindet sich in der separaten <a href="Benutzerdokumentation_detailliert.docx">Benutzerdokumentation</a>.</p>
+<hr>
+<h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
+<ol>
+<li><a href="#1-der-viewer-in-k%C3%BCrze">Der Viewer in Kürze</a></li>
+<li><a href="#2-anwendung-starten">Anwendung starten</a></li>
+<li><a href="#3-schnelleinstieg-mit-den-beispieldateien">Schnelleinstieg mit den Beispieldateien</a></li>
+<li><a href="#4-aufbau-der-oberfl%C3%A4che">Aufbau der Oberfläche</a></li>
+<li><a href="#5-baseline-laden">Baseline laden</a></li>
+<li><a href="#6-3d-ansicht-bedienen">3D-Ansicht bedienen</a></li>
+<li><a href="#7-bauteile-suchen-und-ausw%C3%A4hlen">Bauteile suchen und auswählen</a></li>
+<li><a href="#8-bauteile-einblenden-ausblenden-oder-l%C3%B6schen">Bauteile einblenden, ausblenden oder löschen</a></li>
+<li><a href="#9-inkremente-und-%C3%A4nderungen-pr%C3%BCfen">Inkremente und Änderungen prüfen</a></li>
+<li><a href="#10-%C3%A4nderungen-annehmen-oder-ablehnen">Änderungen annehmen oder ablehnen</a></li>
+<li><a href="#11-bauteile-manuell-verschieben">Bauteile manuell verschieben</a></li>
+<li><a href="#12-neue-bauteile-hinzuf%C3%BCgen">Neue Bauteile hinzufügen</a></li>
+<li><a href="#13-hintmap-und-mcad-namen">Hintmap und MCAD-Namen</a></li>
+<li><a href="#14-detaillierte-obj-modelle">Detaillierte OBJ-Modelle</a></li>
+<li><a href="#15-ergebnis-exportieren">Ergebnis exportieren</a></li>
+<li><a href="#16-makros-verwenden">Makros verwenden</a></li>
+<li><a href="#17-empfohlene-arbeitsabl%C3%A4ufe">Empfohlene Arbeitsabläufe</a></li>
+<li><a href="#18-tastatur--und-maus%C3%BCbersicht">Tastatur- und Mausübersicht</a></li>
+<li><a href="#19-h%C3%A4ufige-probleme">Häufige Probleme</a></li>
+<li><a href="#20-abschlusscheck-vor-der-weitergabe">Abschlusscheck vor der Weitergabe</a></li>
+</ol>
+<hr>
+<h2 id="1-der-viewer-in-kürze">1. Der Viewer in Kürze</h2>
+<p>Der Viewer zeigt IDX-Leiterplattendaten als dreidimensionales Modell. Er kann:</p>
+<ul>
+<li>eine vollständige Ausgangsdatei laden,</li>
+<li>mehrere Änderungspakete nacheinander anzeigen,</li>
+<li>hinzugefügte, gelöschte und verschobene Bauteile hervorheben,</li>
+<li>Bauteile suchen und auswählen,</li>
+<li>Bauteile ausblenden oder für den Export ausschließen,</li>
+<li>Positionen manuell ändern,</li>
+<li>zusätzliche Bauteile einfügen,</li>
+<li>ECAD-Namen über eine Hintmap in MCAD-Namen übersetzen,</li>
+<li>vorhandene OBJ-Modelle als detaillierte Darstellung verwenden,</li>
+<li>einen vollständigen Arbeitsstand oder ein Änderungspaket exportieren.</li>
+</ul>
+<h3 id="empfohlener-einsatz-vor-creo-komponenten-umsortieren-und-bereinigen">Empfohlener Einsatz vor Creo: Komponenten umsortieren und bereinigen</h3>
+<p>Der <a href="https://niclas85.github.io/IDX-Viewer/">Advanced 3D IDX Viewer</a> kann verwendet werden, um eine IDX-Datei bereits
+vor dem Import in Creo aufzubereiten. Besonders geeignet ist er für:</p>
+<ul>
+<li>das ergonomische Umsortieren von Komponenten per Drag-and-drop oder über die Reihenfolge-Schaltflächen,</li>
+<li>das schnelle Suchen und gleichzeitige Auswählen mehrerer Komponenten,</li>
+<li>das Entfernen nicht benötigter Komponenten über den Papierkorb,</li>
+<li>die visuelle Kontrolle des bereinigten Ergebnisses vor der Übergabe an Creo.</li>
+</ul>
+<p>Der browserbasierte Viewer ist für diese Arbeiten in der Regel schneller und ergonomischer als eine nachträgliche
+Bereinigung im Creo-Modellbaum. Creo muss dafür nicht gestartet werden. Deshalb wird für das Umsortieren, Prüfen und
+Bereinigen im Viewer keine zusätzliche Creo-ECAD/IDX-Lizenz benötigt. Eine gegebenenfalls für den späteren Import
+oder weitere ECAD-Funktionen in Creo erforderliche Lizenz ist davon unabhängig.</p>
+<p>Empfohlener Ablauf:</p>
+<ol>
+<li>IDX-Baseline im Viewer laden.</li>
+<li>Nicht benötigte Komponenten über Suche und Mehrfachauswahl ermitteln.</li>
+<li>Komponenten per Drag-and-drop oder mit <strong>Ganz nach oben</strong> beziehungsweise <strong>Ganz nach unten</strong> umsortieren.</li>
+<li>Zu entfernende Komponenten mit dem Papierkorb markieren.</li>
+<li>Das Ergebnis im 3D-Modell und unter <strong>Aktuelle manuelle Änderungen</strong> kontrollieren.</li>
+<li>Den bereinigten Stand über <strong>Export</strong> als neue <code>_filtered.idx</code>-Datei speichern.</li>
+<li>Die exportierte Datei anschließend in Creo weiterverwenden.</li>
+</ol>
+<blockquote>
+<p><strong>Wichtig:</strong> Das Auge blendet Komponenten nur aus. Nur der Papierkorb kennzeichnet eine Komponente als gelöscht
+beziehungsweise vom exportierten Ergebnis ausgeschlossen. Bewahren Sie die ursprüngliche IDX-Datei unverändert
+auf und verwenden Sie für die Weiterverarbeitung den kontrollierten Export.</p>
+</blockquote>
+<h3 id="wichtige-begriffe">Wichtige Begriffe</h3>
+<table>
+<thead>
+<tr>
+<th>Begriff</th>
+<th>Einfache Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Baseline</td>
+<td>vollständiger Ausgangsstand der Leiterplatte</td>
+</tr>
+<tr>
+<td>Inkrement</td>
+<td>Datei mit Änderungen gegenüber einem vorherigen Stand</td>
+</tr>
+<tr>
+<td>Aktuell</td>
+<td>Zustand nach allen geladenen Inkrementen und eigenen Änderungen</td>
+</tr>
+<tr>
+<td>Response</td>
+<td>Antwort auf empfangene Änderungen, beispielsweise eine Ablehnung</td>
+</tr>
+<tr>
+<td>Hintmap</td>
+<td>Zuordnung zwischen ECAD- und MCAD-Namen</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Wichtig:</strong> Der Viewer speichert Ihre Sitzung nicht automatisch. Nicht exportierte Änderungen gehen verloren, wenn die Seite neu geladen oder geschlossen wird.</p>
+</blockquote>
+<hr>
+<h2 id="2-anwendung-starten">2. Anwendung starten</h2>
+<h3 id="21-bereitgestellte-webadresse">2.1 Bereitgestellte Webadresse</h3>
+<p>Die öffentlich bereitgestellte Version ist unter
+<a href="https://niclas85.github.io/IDX-Viewer/">https://niclas85.github.io/IDX-Viewer/</a> erreichbar. Öffnen Sie die Adresse
+in Microsoft Edge oder Google Chrome.</p>
+<h3 id="22-lokal-starten">2.2 Lokal starten</h3>
+<p>Für eine lokale Verwendung kann im Projektordner ein kleiner Webserver gestartet werden:</p>
+<pre><code class="language-powershell">python -m http.server 8765 --bind 127.0.0.1
+</code></pre>
+<p>Öffnen Sie danach im Browser:</p>
+<pre><code class="language-text">http://127.0.0.1:8765/idx.html
+</code></pre>
+<p>Der Server kann später im Terminal mit <code>Strg+C</code> beendet werden.</p>
+<h3 id="23-voraussetzungen">2.3 Voraussetzungen</h3>
+<p>Empfohlen werden:</p>
+<ul>
+<li>Microsoft Edge oder Google Chrome,</li>
+<li>aktiviertes JavaScript,</li>
+<li>funktionierende 3D-Grafikunterstützung,</li>
+<li>eine Bildschirmauflösung ab 1280 × 720 Pixel,</li>
+<li>Internetzugriff zum Laden der 3D-Bibliotheken.</li>
+</ul>
+<h3 id="24-startansicht">2.4 Startansicht</h3>
+<p><a class="help-image-link" href="screenshots/annotated_01_baseline_laden.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_01_baseline_laden.jpg" alt="Klick auf die Dateiauswahl zum Laden der Baseline" loading="lazy"></a></p>
+<p>Vor dem Laden einer Datei ist:</p>
+<ul>
+<li>der Modellbaum leer,</li>
+<li>die Auswahl von Inkrementen noch deaktiviert,</li>
+<li>kein Modell in der Mitte sichtbar,</li>
+<li>noch kein Export möglich.</li>
+</ul>
+<hr>
+<h2 id="3-schnelleinstieg-mit-den-beispieldateien">3. Schnelleinstieg mit den Beispieldateien</h2>
+<p>Im Ordner <code>examples</code> liegen drei Dateien, mit denen der komplette Ablauf ausprobiert werden kann:</p>
+<table>
+<thead>
+<tr>
+<th>Datei</th>
+<th>Verwendung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>template.idx</code></td>
+<td>Baseline</td>
+</tr>
+<tr>
+<td><code>template_increment_1.idx</code></td>
+<td>erstes Änderungspaket</td>
+</tr>
+<tr>
+<td><code>template_increment_2.idx</code></td>
+<td>zweites Änderungspaket</td>
+</tr>
+</tbody></table>
+<h3 id="schritt-für-schritt">Schritt-für-Schritt</h3>
+<ol>
+<li>Öffnen Sie den Viewer.</li>
+<li>Klicken Sie rechts unter <strong>IDX Datei (Basis)</strong> auf <strong>Datei auswählen</strong>.</li>
+<li>Öffnen Sie <code>examples/template.idx</code>.</li>
+<li>Warten Sie, bis die Platine angezeigt wird.</li>
+<li>Klicken Sie unter <strong>IDX Inkrement(e) laden</strong> auf <strong>Dateien auswählen</strong>.</li>
+<li>Wählen Sie beide Increment-Dateien gleichzeitig.</li>
+<li>Prüfen Sie den Zeitstrahl am unteren Bildschirmrand.</li>
+<li>Klicken Sie nacheinander auf <strong>Base</strong>, das erste Inkrement, das zweite Inkrement und <strong>Aktuell</strong>.</li>
+</ol>
+<p>Nach dem Laden der Baseline zeigt der Viewer beim Beispiel <code>49 Elemente</code>. Nach beiden Inkrementen kann der Zähler höher sein, weil auch gelöschte Elemente intern noch zur Änderungshistorie gehören.</p>
+<hr>
+<h2 id="4-aufbau-der-oberfläche">4. Aufbau der Oberfläche</h2>
+<h3 id="41-linke-seite-modellbaum">4.1 Linke Seite: Modellbaum</h3>
+<p>Links finden Sie:</p>
+<ul>
+<li>die Bauteilsuche,</li>
+<li>die Reihenfolge-Schaltflächen,</li>
+<li>alle geladenen Bauteile und Board-Elemente,</li>
+<li>das Auge zum Ein- und Ausblenden,</li>
+<li>den Papierkorb zum Ausschließen,</li>
+<li>die Material- oder Artikelnummer,</li>
+<li>die Anzahl der geladenen Elemente,</li>
+<li><strong>Zoom</strong> für die aktuelle Auswahl.</li>
+</ul>
+<h3 id="42-mitte-3d-modell">4.2 Mitte: 3D-Modell</h3>
+<p>In der Mitte wird die Leiterplatte dargestellt. Hier können Sie:</p>
+<ul>
+<li>das Modell drehen,</li>
+<li>hinein- und herauszoomen,</li>
+<li>die Ansicht verschieben,</li>
+<li>Bauteile direkt anklicken,</li>
+<li>Änderungen farblich vergleichen.</li>
+</ul>
+<h3 id="43-rechte-seite-dateien-und-bearbeitung">4.3 Rechte Seite: Dateien und Bearbeitung</h3>
+<p>Rechts befinden sich:</p>
+<ul>
+<li><strong>ISO</strong> und <strong>Vollbild</strong>,</li>
+<li>die Export-Schaltflächen,</li>
+<li>Baseline und Inkremente,</li>
+<li>Hintmap und MCAD-Namen,</li>
+<li>OBJ-Modelle,</li>
+<li>Sichtbarkeitsfilter,</li>
+<li>manuelles Hinzufügen,</li>
+<li>Koordinaten der aktuellen Einzelauswahl,</li>
+<li>der Makro-Editor.</li>
+</ul>
+<p>Die blauen Abschnittsüberschriften können durch Anklicken ein- und ausgeklappt werden.</p>
+<h3 id="44-unten-änderungshistorie">4.4 Unten: Änderungshistorie</h3>
+<p>Der Zeitstrahl zeigt:</p>
+<ul>
+<li>die Baseline,</li>
+<li>jedes geladene Inkrement,</li>
+<li>den aktuellen Arbeitsstand,</li>
+<li>die Änderungen des ausgewählten Schritts,</li>
+<li>Schaltflächen zum Annehmen oder Ablehnen,</li>
+<li>eigene manuelle Änderungen.</li>
+</ul>
+<p><a class="help-image-link" href="screenshots/annotated_02_oberflaeche.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_02_oberflaeche.jpg" alt="Annotierte Übersicht der drei Hauptbereiche" loading="lazy"></a></p>
+<hr>
+<h2 id="5-baseline-laden">5. Baseline laden</h2>
+<p>Eine Baseline ist immer der erste Schritt.</p>
+<ol>
+<li>Öffnen Sie rechts <strong>IDX Basis &amp; Inkremente</strong>.</li>
+<li>Klicken Sie bei <strong>IDX Datei (Basis)</strong> auf <strong>Datei auswählen</strong>.</li>
+<li>Wählen Sie die gewünschte <code>.idx</code>- oder <code>.xml</code>-Datei.</li>
+<li>Warten Sie, bis die Meldung <strong>Lade Daten...</strong> verschwindet.</li>
+</ol>
+<p>Die wichtigsten Arbeitsbereiche sind im folgenden Bild noch einmal markiert:</p>
+<p><a class="help-image-link" href="screenshots/annotated_02_oberflaeche.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_02_oberflaeche.jpg" alt="Modellbaum, 3D-Ansicht, Optionen und ISO-Schaltfläche" loading="lazy"></a></p>
+<h3 id="nach-dem-laden-kontrollieren">Nach dem Laden kontrollieren</h3>
+<p>Prüfen Sie:</p>
+<ul>
+<li>Ist die Leiterplatte sichtbar?</li>
+<li>Sind die Abmessungen ungefähr plausibel?</li>
+<li>Sind die Bauteile auf der erwarteten Seite?</li>
+<li>Stimmen bekannte Bauteilnamen und Materialnummern?</li>
+<li>Sind keine auffälligen Körper weit außerhalb der Leiterplatte?</li>
+<li>Werden oben rechts <strong>Inkrement</strong> und <strong>Export</strong> angezeigt?</li>
+</ul>
+<p>Wenn das Modell nicht gut zu sehen ist, klicken Sie auf <strong>ISO</strong>.</p>
+<blockquote>
+<p><strong>Hinweis:</strong> Das Laden einer neuen Baseline ersetzt den bisherigen Arbeitsstand.</p>
+</blockquote>
+<hr>
+<h2 id="6-3d-ansicht-bedienen">6. 3D-Ansicht bedienen</h2>
+<table>
+<thead>
+<tr>
+<th>Aktion</th>
+<th>Bedienung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modell drehen</td>
+<td>linke Maustaste halten und ziehen</td>
+</tr>
+<tr>
+<td>Zoomen</td>
+<td>Mausrad</td>
+</tr>
+<tr>
+<td>Ansicht verschieben</td>
+<td>rechte Maustaste halten und ziehen</td>
+</tr>
+<tr>
+<td>Bauteil auswählen</td>
+<td>kurz mit linker Maustaste anklicken</td>
+</tr>
+<tr>
+<td>Auswahl aufheben</td>
+<td>in einen freien Bereich klicken</td>
+</tr>
+</tbody></table>
+<h3 id="iso">ISO</h3>
+<p><strong>ISO</strong> richtet die Ansicht neu auf alle sichtbaren Elemente aus. Verwenden Sie diese Funktion, wenn:</p>
+<ul>
+<li>das Modell nicht mehr im Bild ist,</li>
+<li>nach dem Ausblenden vieler Elemente zu viel Leerraum sichtbar ist,</li>
+<li>die Kamera sehr nah oder sehr weit entfernt steht.</li>
+</ul>
+<h3 id="zoom">Zoom</h3>
+<p>Wählen Sie ein oder mehrere Bauteile und klicken Sie links auf <strong>Zoom</strong>. Die Kamera wird auf diese Auswahl ausgerichtet.</p>
+<h3 id="vollbild">Vollbild</h3>
+<p><strong>Vollbild</strong> vergrößert den Arbeitsbereich. Mit <strong>Fenstermodus</strong> verlassen Sie ihn wieder.</p>
+<h3 id="farben-der-änderungen">Farben der Änderungen</h3>
+<table>
+<thead>
+<tr>
+<th>Farbe</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Grün</td>
+<td>neu hinzugefügt</td>
+</tr>
+<tr>
+<td>Rot</td>
+<td>gelöscht</td>
+</tr>
+<tr>
+<td>Gelb</td>
+<td>verschoben</td>
+</tr>
+<tr>
+<td>Blau leuchtend</td>
+<td>aktuell ausgewählt</td>
+</tr>
+<tr>
+<td>Grün beim Board</td>
+<td>normale Leiterplattendarstellung</td>
+</tr>
+<tr>
+<td>Cyan</td>
+<td>normales Bauteil</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="7-bauteile-suchen-und-auswählen">7. Bauteile suchen und auswählen</h2>
+<h3 id="71-suche">7.1 Suche</h3>
+<p>Geben Sie links in <strong>Bauteil suchen...</strong> einen Namen oder eine Materialnummer ein.</p>
+<p>Beispiele:</p>
+<pre><code class="language-text">X100
+</code></pre>
+<pre><code class="language-text">LMS-009514
+</code></pre>
+<p>Mit <code>*</code> können Sie mehrere ähnliche Einträge finden:</p>
+<pre><code class="language-text">X*
+</code></pre>
+<pre><code class="language-text">*9514*
+</code></pre>
+<p>Mit <code>✖</code> wird die Suche wieder geleert.</p>
+<p><a class="help-image-link" href="screenshots/annotated_03_suche.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_03_suche.jpg" alt="Suchfeld verwenden und einen Treffer auswählen" loading="lazy"></a></p>
+<h3 id="72-einzelauswahl">7.2 Einzelauswahl</h3>
+<p>Klicken Sie:</p>
+<ul>
+<li>auf eine Zeile im Modellbaum, oder</li>
+<li>direkt auf ein Bauteil im 3D-Modell.</li>
+</ul>
+<p>Das gewählte Bauteil wird blau hervorgehoben. Rechts erscheint der Bereich <strong>Auswahl Verschieben</strong>.</p>
+<h3 id="73-mehrfachauswahl">7.3 Mehrfachauswahl</h3>
+<ul>
+<li><code>Strg</code> + Klick fügt einzelne Bauteile zur Auswahl hinzu oder entfernt sie.</li>
+<li><code>Umschalt</code> + Klick wählt einen zusammenhängenden Bereich.</li>
+<li><code>Esc</code> leert die Auswahl.</li>
+</ul>
+<h3 id="74-reihenfolge-ändern">7.4 Reihenfolge ändern</h3>
+<p>Ausgewählte Zeilen können mit:</p>
+<ul>
+<li><strong>Ganz nach oben</strong>,</li>
+<li><strong>Ganz nach unten</strong>,</li>
+<li>oder per Drag-and-drop</li>
+</ul>
+<p>im Modellbaum umsortiert werden.</p>
+<p>Das verändert nicht die Position im 3D-Modell.</p>
+<hr>
+<h2 id="8-bauteile-einblenden-ausblenden-oder-löschen">8. Bauteile einblenden, ausblenden oder löschen</h2>
+<p>Dieser Unterschied ist für den Export besonders wichtig.</p>
+<h3 id="81-auge-nur-ausblenden">8.1 Auge: nur ausblenden</h3>
+<p>Das Auge verändert ausschließlich die Anzeige:</p>
+<ul>
+<li>Bauteil wird unsichtbar,</li>
+<li>Daten bleiben erhalten,</li>
+<li>Bauteil bleibt im Export enthalten.</li>
+</ul>
+<p>Verwenden Sie das Auge, wenn Sie nur eine übersichtlichere Ansicht benötigen.</p>
+<h3 id="82-papierkorb-aus-dem-ergebnis-ausschließen">8.2 Papierkorb: aus dem Ergebnis ausschließen</h3>
+<p>Der Papierkorb markiert das Bauteil als gelöscht:</p>
+<ul>
+<li>Bauteil wird durchgestrichen,</li>
+<li>Bauteil wird im aktuellen Modell ausgeblendet,</li>
+<li>die Aktion erscheint als manuelle Änderung,</li>
+<li>der Export kann das Bauteil entfernen oder als Löschung melden.</li>
+</ul>
+<blockquote>
+<p><strong>Merksatz:</strong> Auge = nur Ansicht. Papierkorb = Datenänderung.</p>
+</blockquote>
+<p>Ein erneuter Klick auf den Papierkorb hebt eine manuelle Löschmarkierung wieder auf.</p>
+<p><a class="help-image-link" href="screenshots/annotated_04_auge_papierkorb.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_04_auge_papierkorb.jpg" alt="Unterschied zwischen Auge, Papierkorb und Auswahl" loading="lazy"></a></p>
+<h3 id="83-mehrere-bauteile-gleichzeitig">8.3 Mehrere Bauteile gleichzeitig</h3>
+<p>Wenn mehrere Bauteile ausgewählt sind, wirken Auge oder Papierkorb auf die gesamte Auswahl.</p>
+<p>Prüfen Sie vor einer Löschung deshalb immer:</p>
+<ul>
+<li>Wie viele Zeilen sind blau markiert?</li>
+<li>Ist noch ein Suchfilter aktiv?</li>
+<li>Soll wirklich die gesamte Auswahl geändert werden?</li>
+</ul>
+<h3 id="84-sichtbarkeit-nach-typ">8.4 Sichtbarkeit nach Typ</h3>
+<p>Unter <strong>Sichtbarkeit (Typen)</strong> können ganze Gruppen ein- oder ausgeblendet werden, zum Beispiel:</p>
+<ul>
+<li>normale Bauteile,</li>
+<li>Ausschnitte,</li>
+<li>KeepIn-Bereiche,</li>
+<li>Durchkontaktierungen,</li>
+<li>Board-Schichten.</li>
+</ul>
+<p>Auch diese Typfilter verändern nur die Anzeige, nicht den Export.</p>
+<p><a class="help-image-link" href="screenshots/annotated_05_typfilter.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_05_typfilter.jpg" alt="Checkboxen zum Ein- und Ausblenden kompletter Geometrietypen" loading="lazy"></a></p>
+<hr>
+<h2 id="9-inkremente-und-änderungen-prüfen">9. Inkremente und Änderungen prüfen</h2>
+<h3 id="91-inkremente-laden">9.1 Inkremente laden</h3>
+<ol>
+<li>Laden Sie zuerst die Baseline.</li>
+<li>Klicken Sie bei <strong>IDX Inkrement(e) laden</strong> auf <strong>Dateien auswählen</strong>.</li>
+<li>Wählen Sie alle zusammengehörenden Inkremente gleichzeitig.</li>
+<li>Warten Sie, bis der Zeitstrahl aufgebaut ist.</li>
+</ol>
+<p><a class="help-image-link" href="screenshots/annotated_09_inkremente_laden.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_09_inkremente_laden.jpg" alt="Dateiauswahl zum gemeinsamen Laden der Inkremente" loading="lazy"></a></p>
+<h3 id="92-reihenfolge-prüfen">9.2 Reihenfolge prüfen</h3>
+<p>Die Anwendung ordnet Inkremente nach dem gespeicherten Dateidatum. Prüfen Sie deshalb immer, ob die Reihenfolge im Zeitstrahl fachlich stimmt.</p>
+<p>Wenn die Reihenfolge falsch ist:</p>
+<ul>
+<li>kontrollieren Sie Datum und Uhrzeit der Dateien,</li>
+<li>verwenden Sie gegebenenfalls Kopien mit korrigierter Zeitreihenfolge,</li>
+<li>laden Sie danach den gesamten Increment-Satz neu.</li>
+</ul>
+<h3 id="93-zeitstrahl-bedienen">9.3 Zeitstrahl bedienen</h3>
+<p><a class="help-image-link" href="screenshots/annotated_10_zeitstrahl.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_10_zeitstrahl.jpg" alt="Base, Inkremente und aktuellen Zustand im Zeitstrahl auswählen" loading="lazy"></a></p>
+<p>Klicken Sie auf:</p>
+<ul>
+<li><strong>Base</strong> für den unveränderten Ausgangsstand,</li>
+<li>ein Inkrement für den Zustand nach diesem Änderungsschritt,</li>
+<li><strong>Aktuell</strong> für den Endzustand einschließlich eigener Änderungen.</li>
+</ul>
+<p>Die Pfeile <code>⬅️</code> und <code>➡️</code> wechseln zwischen Baseline und Inkrementschritten.</p>
+<h3 id="94-änderungen-lesen">9.4 Änderungen lesen</h3>
+<p>Im Detailbereich stehen beispielsweise:</p>
+<pre><code class="language-text">X103 gelöscht
+</code></pre>
+<pre><code class="language-text">Hinzugefügt: d00888_M0
+</code></pre>
+<pre><code class="language-text">X100 verschoben (Z: 15.00mm)
+</code></pre>
+<p>Wählen Sie jeden Schritt einzeln und prüfen Sie:</p>
+<ul>
+<li>Welche Bauteile sind neu?</li>
+<li>Welche wurden gelöscht?</li>
+<li>Welche wurden verschoben?</li>
+<li>Ist die neue Position plausibel?</li>
+<li>Gibt es Kollisionen oder ungewöhnliche Abstände?</li>
+</ul>
+<h3 id="95-beispieländerungen">9.5 Beispieländerungen</h3>
+<p>Das erste Beispiel-Inkrement:</p>
+<ul>
+<li>löscht E104, E105 und E107,</li>
+<li>fügt drei neue Instanzen mit <code>016144-0000</code> hinzu,</li>
+<li>verschiebt X101 in Z um 20 mm.</li>
+</ul>
+<p>Das zweite Beispiel-Inkrement:</p>
+<ul>
+<li>löscht X103,</li>
+<li>fügt <code>d00888_M0</code> hinzu,</li>
+<li>verschiebt X100 in Z um 15 mm.</li>
+</ul>
+<hr>
+<h2 id="10-änderungen-annehmen-oder-ablehnen">10. Änderungen annehmen oder ablehnen</h2>
+<p>Bei zuordenbaren Änderungen zeigt der Detailbereich:</p>
+<ul>
+<li><strong>Akzeptieren</strong></li>
+<li><strong>Ablehnen</strong></li>
+</ul>
+<h3 id="akzeptieren">Akzeptieren</h3>
+<p>Mit <strong>Akzeptieren</strong> wird eine zuvor gesetzte Ablehnung wieder aufgehoben. Ohne Ihre Aktion wird eine Änderung in der Anzeige grundsätzlich als angenommen behandelt.</p>
+<h3 id="ablehnen">Ablehnen</h3>
+<p>Mit <strong>Ablehnen</strong> merkt sich der Viewer, dass diese Änderung nicht übernommen werden soll.</p>
+<blockquote>
+<p><strong>Wichtig:</strong> Ablehnen macht die Änderung in der 3D-Ansicht nicht automatisch rückgängig. Ein gelöschtes Bauteil erscheint dadurch nicht wieder und ein verschobenes Bauteil springt nicht an seine alte Position zurück.</p>
+</blockquote>
+<p><a class="help-image-link" href="screenshots/annotated_11_accept_reject.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_11_accept_reject.jpg" alt="Änderung akzeptieren, ablehnen oder als Response exportieren" loading="lazy"></a></p>
+<h3 id="neue-bauteile">Neue Bauteile</h3>
+<p>Neu hinzugefügte Bauteile werden derzeit häufig nur als Textzeile angezeigt. Für diese Zeilen kann eine einzelne Annehmen-/Ablehnen-Schaltfläche fehlen.</p>
+<h3 id="response-exportieren">Response exportieren</h3>
+<p>Mit <strong>Response exportieren</strong> können gespeicherte Ablehnungen ausgegeben werden.</p>
+<p>Der aktuelle Download trägt weiterhin einen Namen mit:</p>
+<pre><code class="language-text">_increment.idx
+</code></pre>
+<p>Das ist auch dann möglich, wenn Sie den Response-Button verwendet haben. Entscheidend ist der Dateiinhalt.</p>
+<h3 id="empfohlene-kontrolle">Empfohlene Kontrolle</h3>
+<ol>
+<li>Betroffenen Inkrementschritt öffnen.</li>
+<li>Änderung fachlich und visuell bewerten.</li>
+<li>Bei Bedarf <strong>Ablehnen</strong> wählen.</li>
+<li>Auf <strong>Aktuell</strong> wechseln.</li>
+<li>Falls nötig, einen eigenen Gegenvorschlag als manuelle Verschiebung erfassen.</li>
+<li><strong>Response exportieren</strong>.</li>
+<li>Datei vor der Weitergabe im Zielprozess prüfen.</li>
+</ol>
+<hr>
+<h2 id="11-bauteile-manuell-verschieben">11. Bauteile manuell verschieben</h2>
+<ol>
+<li>Wechseln Sie auf <strong>Aktuell</strong>.</li>
+<li>Wählen Sie genau ein Bauteil aus.</li>
+<li>Öffnen Sie rechts <strong>Auswahl Verschieben</strong>.</li>
+<li>Ändern Sie X, Y und/oder Z.</li>
+<li>Klicken Sie auf <strong>Anwenden</strong>.</li>
+</ol>
+<p><a class="help-image-link" href="screenshots/annotated_12_bauteil_verschieben.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_12_bauteil_verschieben.jpg" alt="Koordinaten eintragen, anwenden oder zurücksetzen" loading="lazy"></a></p>
+<p>Die Änderung erscheint:</p>
+<ul>
+<li>mit einem Stiftsymbol im Modellbaum,</li>
+<li>unter <strong>Aktuelle manuelle Änderungen</strong>,</li>
+<li>mit dem Unterschied zur vorherigen Position.</li>
+</ul>
+<p>Beispiel:</p>
+<pre><code class="language-text">X100 verschoben (X: 4.90mm)
+</code></pre>
+<h3 id="änderung-hervorheben">Änderung hervorheben</h3>
+<p>Klicken Sie im Zeitstrahl auf den Text der manuellen Änderung. Das Bauteil und seine vorherige Position werden hervorgehoben.</p>
+<h3 id="zurück">Zurück</h3>
+<p><strong>Zurück</strong> setzt das ausgewählte Bauteil auf die Position zurück, die nach dem letzten geladenen Inkrement gültig war.</p>
+<h3 id="einzelne-änderung-verwerfen">Einzelne Änderung verwerfen</h3>
+<p>Klicken Sie rechts neben dem Eintrag unter <strong>Aktuelle manuelle Änderungen</strong> auf <code>X</code>.</p>
+<h3 id="alle-änderungen-verwerfen">Alle Änderungen verwerfen</h3>
+<p>Klicken Sie auf <strong>VERWERFEN</strong> und bestätigen Sie die Rückfrage. Alle eigenen Verschiebungen, Ergänzungen und Löschungen werden entfernt.</p>
+<p><a class="help-image-link" href="screenshots/annotated_16_aenderungen_verwerfen.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_16_aenderungen_verwerfen.jpg" alt="Einzelne oder alle manuellen Änderungen verwerfen" loading="lazy"></a></p>
+<hr>
+<h2 id="12-neue-bauteile-hinzufügen">12. Neue Bauteile hinzufügen</h2>
+<ol>
+<li>Öffnen Sie rechts <strong>Manuell Hinzufügen</strong>.</li>
+<li>Geben Sie einen Namen ein.</li>
+<li>Wählen Sie eine OBJ-Datei.</li>
+<li>Geben Sie X, Y und Z ein.</li>
+<li>Wählen Sie Top oder Bottom.</li>
+<li>Stellen Sie bei Bedarf Maßstab und Rotation ein.</li>
+<li>Klicken Sie <strong>Hinzufügen</strong>.</li>
+</ol>
+<p>Ohne OBJ-Datei wird kein Bauteil hinzugefügt.</p>
+<p><a class="help-image-link" href="screenshots/annotated_13_bauteil_hinzufuegen.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_13_bauteil_hinzufuegen.jpg" alt="Name, OBJ-Datei, Position und Hinzufügen-Schaltfläche" loading="lazy"></a></p>
+<h3 id="eingabefelder">Eingabefelder</h3>
+<table>
+<thead>
+<tr>
+<th>Feld</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Name</td>
+<td>Name des neuen Bauteils</td>
+</tr>
+<tr>
+<td>OBJ-Datei</td>
+<td>sichtbares 3D-Modell</td>
+</tr>
+<tr>
+<td>X, Y, Z</td>
+<td>Position</td>
+</tr>
+<tr>
+<td>Seite</td>
+<td>Ober- oder Unterseite</td>
+</tr>
+<tr>
+<td>Skala</td>
+<td>Größe des OBJ-Modells</td>
+</tr>
+<tr>
+<td>Rot</td>
+<td>Drehung der Vorschau</td>
+</tr>
+</tbody></table>
+<p>Das neue Bauteil erhält im Modellbaum ein Sternsymbol.</p>
+<blockquote>
+<p><strong>Hinweis:</strong> Prüfen Sie ein manuell hinzugefügtes Bauteil nach dem Export immer im Zielsystem. Die OBJ-Darstellung wird nur vereinfacht in die IDX-Ausgabe übernommen.</p>
+</blockquote>
+<hr>
+<h2 id="13-hintmap-und-mcad-namen">13. Hintmap und MCAD-Namen</h2>
+<p>Eine Hintmap übersetzt ECAD-Bezeichnungen in vertraute MCAD-Bezeichnungen.</p>
+<h3 id="hintmap-laden">Hintmap laden</h3>
+<ol>
+<li>Öffnen Sie <strong>Hintmap &amp; MCAD</strong>.</li>
+<li>Wählen Sie eine <code>.map</code>- oder <code>.txt</code>-Datei.</li>
+<li>Prüfen Sie den Mapping-Report.</li>
+<li>Aktivieren Sie <strong>MCAD Namen verwenden</strong>.</li>
+</ol>
+<p><a class="help-image-link" href="screenshots/annotated_06_hintmap_report.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_06_hintmap_report.jpg" alt="Hintmap auswählen und die gefundenen Zuordnungen prüfen" loading="lazy"></a></p>
+<p>Danach zeigt der Modellbaum die zugeordneten MCAD-Namen, soweit eine Zuordnung vorhanden ist.</p>
+<p><a class="help-image-link" href="screenshots/annotated_07_mcad_namen.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_07_mcad_namen.jpg" alt="MCAD-Namen aktivieren und Ergebnis im Modellbaum kontrollieren" loading="lazy"></a></p>
+<h3 id="was-sich-ändert">Was sich ändert</h3>
+<ul>
+<li>angezeigte Namen,</li>
+<li>Suchergebnisse,</li>
+<li>Zuordnung von OBJ-Dateien.</li>
+</ul>
+<p>Die ursprünglichen Daten der Baseline werden durch das bloße Umschalten nicht umbenannt.</p>
+<h3 id="wenn-zuordnungen-fehlen">Wenn Zuordnungen fehlen</h3>
+<p>Prüfen Sie:</p>
+<ul>
+<li>Ist die richtige Hintmap geladen?</li>
+<li>Stimmen ECAD-Namen exakt?</li>
+<li>Enthält der Report nicht zugeordnete Einträge?</li>
+<li>Wird nach Name oder Materialnummer gemappt?</li>
+</ul>
+<hr>
+<h2 id="14-detaillierte-obj-modelle">14. Detaillierte OBJ-Modelle</h2>
+<p>OBJ-Modelle ersetzen die einfachen Körper in der Ansicht durch detailliertere Bauteilmodelle.</p>
+<h3 id="modelle-laden">Modelle laden</h3>
+<ol>
+<li>Öffnen Sie <strong>3D Modelle (.obj)</strong>.</li>
+<li>Wählen Sie unter <strong>OBJ Verzeichnis</strong> den Modellordner.</li>
+<li>Warten Sie, bis der Import abgeschlossen ist.</li>
+<li>Prüfen Sie den Importreport.</li>
+<li>Aktivieren Sie <strong>Detaillierte Modelle verwenden</strong>.</li>
+</ol>
+<p><a class="help-image-link" href="screenshots/annotated_08_obj_modelle.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_08_obj_modelle.jpg" alt="OBJ-Verzeichnis, detaillierte Modelle und 90-Grad-Kippung" loading="lazy"></a></p>
+<h3 id="dateinamen">Dateinamen</h3>
+<p>Der OBJ-Dateiname muss zum Bauteilnamen oder zur Materialnummer passen, zum Beispiel:</p>
+<pre><code class="language-text">LMS-009773.obj
+</code></pre>
+<h3 id="falsche-orientierung">Falsche Orientierung</h3>
+<p>Wenn Modelle auf der Seite liegen oder falsch ausgerichtet sind:</p>
+<ol>
+<li>Aktivieren oder deaktivieren Sie <strong>90° X-Achse kippen</strong>.</li>
+<li>Prüfen Sie Top/Bottom.</li>
+<li>Prüfen Sie Maßstab und Einfügepunkt.</li>
+</ol>
+<p>OBJ-Modelle verbessern vor allem die Ansicht. Der vollständige OBJ-Inhalt wird nicht in den IDX-Export eingebettet.</p>
+<hr>
+<h2 id="15-ergebnis-exportieren">15. Ergebnis exportieren</h2>
+<p>Nach dem Laden einer Baseline erscheinen oben rechts:</p>
+<ul>
+<li><strong>Inkrement</strong></li>
+<li><strong>Export</strong></li>
+</ul>
+<h3 id="151-export">15.1 Export</h3>
+<p><strong>Export</strong> erstellt einen vollständigen bearbeiteten Arbeitsstand.</p>
+<p>Der Dateiname endet auf:</p>
+<pre><code class="language-text">_filtered.idx
+</code></pre>
+<p>Verwenden Sie diesen Export, wenn Sie einen möglichst vollständigen aktuellen Stand benötigen.</p>
+<h3 id="152-inkrement">15.2 Inkrement</h3>
+<p><strong>Inkrement</strong> erstellt eine Datei mit Ihren neuen Änderungen.</p>
+<p>Der Dateiname endet auf:</p>
+<pre><code class="language-text">_increment.idx
+</code></pre>
+<p>Die Datei kann enthalten:</p>
+<ul>
+<li>manuelle Verschiebungen,</li>
+<li>manuelle Löschungen,</li>
+<li>manuell hinzugefügte Bauteile,</li>
+<li>gespeicherte Ablehnungen.</li>
+</ul>
+<p>Wenn keine neue Änderung vorhanden ist, erscheint:</p>
+<pre><code class="language-text">Keine neuen Änderungen!
+</code></pre>
+<p><a class="help-image-link" href="screenshots/annotated_14_export.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_14_export.jpg" alt="Unterschied zwischen Inkrement und vollständigem Export" loading="lazy"></a></p>
+<h3 id="153-response">15.3 Response</h3>
+<p>Der Response-Export verwendet technisch denselben Downloadweg wie der Inkrementexport. Deshalb endet auch eine Response-Datei derzeit auf <code>_increment.idx</code>.</p>
+<h3 id="154-welchen-export-soll-ich-verwenden">15.4 Welchen Export soll ich verwenden?</h3>
+<table>
+<thead>
+<tr>
+<th>Aufgabe</th>
+<th>Schaltfläche</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>vollständigen bearbeiteten Stand speichern</td>
+<td><strong>Export</strong></td>
+</tr>
+<tr>
+<td>nur eigene Änderungen weitergeben</td>
+<td><strong>Inkrement</strong></td>
+</tr>
+<tr>
+<td>Ablehnung beantworten</td>
+<td><strong>Response exportieren</strong></td>
+</tr>
+<tr>
+<td>nur etwas unsichtbar machen</td>
+<td>kein Export nötig</td>
+</tr>
+</tbody></table>
+<h3 id="155-vor-dem-export">15.5 Vor dem Export</h3>
+<p>Prüfen Sie:</p>
+<ul>
+<li>Sind Sie auf <strong>Aktuell</strong>?</li>
+<li>Sind noch unbeabsichtigte Bauteile ausgewählt?</li>
+<li>Gibt es durchgestrichene Bauteile?</li>
+<li>Stimmen alle manuellen Änderungen?</li>
+<li>Wurden Ablehnungen richtig gesetzt?</li>
+<li>Ist die richtige Baseline geladen?</li>
+</ul>
+<h3 id="156-nach-dem-export">15.6 Nach dem Export</h3>
+<p>Prüfen Sie:</p>
+<ul>
+<li>Wurde die Datei heruntergeladen?</li>
+<li>Ist der Dateiname plausibel?</li>
+<li>Ist die Dateigröße größer als null?</li>
+<li>Lässt sich die Datei im vorgesehenen Zielsystem öffnen?</li>
+<li>Sind neue, verschobene und gelöschte Bauteile dort korrekt?</li>
+</ul>
+<hr>
+<h2 id="16-makros-verwenden">16. Makros verwenden</h2>
+<p>Der Makro-Editor ist für wiederkehrende Aufgaben und erfahrene Anwender gedacht.</p>
+<p><a class="help-image-link" href="screenshots/annotated_15_makro.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_15_makro.jpg" alt="Befehle eingeben, Makrodatei laden und Makro ausführen" loading="lazy"></a></p>
+<h3 id="makro-öffnen">Makro öffnen</h3>
+<p>Klicken Sie rechts unten auf <strong>Makro / Skript Editor öffnen</strong>.</p>
+<p>Sie können:</p>
+<ul>
+<li>Befehle direkt eingeben,</li>
+<li>eine vorbereitete Textdatei laden,</li>
+<li>das Makro mit <strong>Ausführen</strong> starten.</li>
+</ul>
+<h3 id="einfaches-beispiel">Einfaches Beispiel</h3>
+<pre><code class="language-text">filter(X100)
+select(filter)
+editcomp(40, 33.6, 15)
+zoom()
+</code></pre>
+<h3 id="mehrere-bauteile-ausblenden">Mehrere Bauteile ausblenden</h3>
+<pre><code class="language-text">filter(LMS-009514)
+select(filter)
+hide()
+</code></pre>
+<h3 id="mehrere-bauteile-für-den-export-löschen">Mehrere Bauteile für den Export löschen</h3>
+<pre><code class="language-text">filter(LMS-009514)
+select(filter)
+delete()
+</code></pre>
+<h3 id="häufige-befehle">Häufige Befehle</h3>
+<table>
+<thead>
+<tr>
+<th>Befehl</th>
+<th>Wirkung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filter(text)</code></td>
+<td>Suche setzen</td>
+</tr>
+<tr>
+<td><code>select(filter)</code></td>
+<td>sichtbare Treffer auswählen</td>
+</tr>
+<tr>
+<td><code>deselect()</code></td>
+<td>Auswahl leeren</td>
+</tr>
+<tr>
+<td><code>hide()</code></td>
+<td>Auswahl ausblenden</td>
+</tr>
+<tr>
+<td><code>show()</code></td>
+<td>Auswahl einblenden</td>
+</tr>
+<tr>
+<td><code>delete()</code></td>
+<td>Auswahl als gelöscht markieren</td>
+</tr>
+<tr>
+<td><code>include()</code></td>
+<td>Löschmarkierung aufheben</td>
+</tr>
+<tr>
+<td><code>editcomp(x,y,z)</code></td>
+<td>einzelne Auswahl verschieben</td>
+</tr>
+<tr>
+<td><code>zoom()</code></td>
+<td>auf Auswahl zoomen</td>
+</tr>
+<tr>
+<td><code>iso()</code></td>
+<td>Gesamtansicht herstellen</td>
+</tr>
+<tr>
+<td><code>exportbaseline()</code></td>
+<td>vollständigen Stand exportieren</td>
+</tr>
+<tr>
+<td><code>exportincrement()</code></td>
+<td>Änderungspaket exportieren</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Sicherheitshinweis:</strong> Führen Sie ein neues Makro zuerst ohne Exportbefehl aus. Prüfen Sie Auswahl und Änderungsliste, bevor Sie einen automatischen Export ergänzen.</p>
+</blockquote>
+<p>Die vollständige Befehlsliste steht in der ausführlichen <a href="Benutzerdokumentation_detailliert.docx">Benutzerdokumentation</a>.</p>
+<hr>
+<h2 id="17-empfohlene-arbeitsabläufe">17. Empfohlene Arbeitsabläufe</h2>
+<h3 id="171-baseline-nur-ansehen">17.1 Baseline nur ansehen</h3>
+<ol>
+<li>Baseline laden.</li>
+<li><strong>ISO</strong> klicken.</li>
+<li>bekannte Bauteile suchen.</li>
+<li>bei Bedarf Typen ausblenden.</li>
+<li>keine Papierkorb-Symbole verwenden.</li>
+</ol>
+<h3 id="172-änderungen-kontrollieren">17.2 Änderungen kontrollieren</h3>
+<ol>
+<li>Baseline laden.</li>
+<li>alle Inkremente gemeinsam laden.</li>
+<li>Reihenfolge im Zeitstrahl prüfen.</li>
+<li>jeden Schritt einzeln öffnen.</li>
+<li>neue, gelöschte und verschobene Bauteile kontrollieren.</li>
+<li>auf <strong>Aktuell</strong> den Endzustand prüfen.</li>
+</ol>
+<h3 id="173-änderung-ablehnen">17.3 Änderung ablehnen</h3>
+<ol>
+<li>betroffenen Increment-Schritt öffnen.</li>
+<li>Änderung prüfen.</li>
+<li><strong>Ablehnen</strong> klicken.</li>
+<li>bei Bedarf eigene alternative Position erfassen.</li>
+<li>Response exportieren.</li>
+<li>Datei vor der Übergabe prüfen.</li>
+</ol>
+<h3 id="174-bestimmte-bauteile-nur-ausblenden">17.4 Bestimmte Bauteile nur ausblenden</h3>
+<ol>
+<li>Suchbegriff eingeben.</li>
+<li>Treffer auswählen.</li>
+<li>Auge anklicken.</li>
+<li>Suche leeren.</li>
+<li><strong>ISO</strong> klicken.</li>
+</ol>
+<h3 id="175-bestimmte-bauteile-aus-dem-ergebnis-entfernen">17.5 Bestimmte Bauteile aus dem Ergebnis entfernen</h3>
+<ol>
+<li>Suchbegriff eingeben.</li>
+<li>Auswahl sorgfältig prüfen.</li>
+<li>Papierkorb anklicken.</li>
+<li>unter <strong>Aktuelle manuelle Änderungen</strong> kontrollieren.</li>
+<li>gewünschten Export erstellen.</li>
+<li>Ergebnis im Zielsystem prüfen.</li>
+</ol>
+<h3 id="176-hintmap-und-obj-modelle-verwenden">17.6 Hintmap und OBJ-Modelle verwenden</h3>
+<ol>
+<li>Baseline laden.</li>
+<li>Hintmap laden.</li>
+<li>MCAD-Namen aktivieren.</li>
+<li>OBJ-Verzeichnis laden.</li>
+<li>Importreport prüfen.</li>
+<li>detaillierte Modelle aktivieren.</li>
+<li>Orientierung kritischer Bauteile kontrollieren.</li>
+</ol>
+<hr>
+<h2 id="18-tastatur--und-mausübersicht">18. Tastatur- und Mausübersicht</h2>
+<h3 id="tastatur">Tastatur</h3>
+<table>
+<thead>
+<tr>
+<th>Taste</th>
+<th>Wirkung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>H</code></td>
+<td>Auswahl ein-/ausblenden</td>
+</tr>
+<tr>
+<td><code>Entf</code></td>
+<td>Auswahl als gelöscht markieren</td>
+</tr>
+<tr>
+<td><code>Rücktaste</code></td>
+<td>wie <code>Entf</code>, wenn kein Eingabefeld aktiv ist</td>
+</tr>
+<tr>
+<td><code>Esc</code></td>
+<td>Auswahl leeren</td>
+</tr>
+<tr>
+<td><code>Strg</code> + Klick</td>
+<td>Mehrfachauswahl</td>
+</tr>
+<tr>
+<td><code>Umschalt</code> + Klick</td>
+<td>Bereichsauswahl</td>
+</tr>
+</tbody></table>
+<h3 id="modellbaum">Modellbaum</h3>
+<table>
+<thead>
+<tr>
+<th>Symbol/Aktion</th>
+<th>Wirkung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auge</td>
+<td>nur Sichtbarkeit ändern</td>
+</tr>
+<tr>
+<td>Papierkorb</td>
+<td>Löschung für den Export umschalten</td>
+</tr>
+<tr>
+<td>Pfeil vor Platine</td>
+<td>Unterelemente auf-/zuklappen</td>
+</tr>
+<tr>
+<td>Zeile ziehen</td>
+<td>Reihenfolge ändern</td>
+</tr>
+<tr>
+<td>Zeile anklicken</td>
+<td>auswählen</td>
+</tr>
+</tbody></table>
+<h3 id="3d-ansicht">3D-Ansicht</h3>
+<table>
+<thead>
+<tr>
+<th>Aktion</th>
+<th>Wirkung</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>kurzer Linksklick</td>
+<td>Bauteil auswählen</td>
+</tr>
+<tr>
+<td>linke Maustaste ziehen</td>
+<td>Modell drehen</td>
+</tr>
+<tr>
+<td>rechte Maustaste ziehen</td>
+<td>Ansicht verschieben</td>
+</tr>
+<tr>
+<td>Mausrad</td>
+<td>zoomen</td>
+</tr>
+<tr>
+<td>freier Hintergrund</td>
+<td>Auswahl leeren</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="19-häufige-probleme">19. Häufige Probleme</h2>
+<h3 id="die-seite-ist-leer">Die Seite ist leer</h3>
+<ul>
+<li>Internetverbindung prüfen.</li>
+<li>Edge oder Chrome verwenden.</li>
+<li>Seite über einen lokalen Webserver öffnen.</li>
+<li>prüfen, ob 3D-Hardwarebeschleunigung aktiviert ist.</li>
+</ul>
+<h3 id="nach-dem-laden-ist-kein-modell-sichtbar">Nach dem Laden ist kein Modell sichtbar</h3>
+<ul>
+<li><strong>ISO</strong> klicken.</li>
+<li>andere IDX-Datei testen.</li>
+<li>prüfen, ob die Datei vollständig und nicht beschädigt ist.</li>
+<li>bei produktiven Daten den Ersteller der Datei kontaktieren.</li>
+</ul>
+<h3 id="das-modell-ist-sehr-klein-oder-weit-entfernt">Das Modell ist sehr klein oder weit entfernt</h3>
+<ul>
+<li><strong>ISO</strong> klicken.</li>
+<li>bekanntes Bauteil auswählen.</li>
+<li><strong>Zoom</strong> klicken.</li>
+<li>ungewöhnliche oder weit entfernte Objekte ausblenden.</li>
+</ul>
+<h3 id="inkremente-stehen-in-falscher-reihenfolge">Inkremente stehen in falscher Reihenfolge</h3>
+<p>Der Viewer verwendet die Dateidaten. Kontrollieren Sie Datum und Uhrzeit der Dateien und laden Sie den Satz anschließend neu.</p>
+<h3 id="ablehnen-stellt-das-bauteil-nicht-zurück">Ablehnen stellt das Bauteil nicht zurück</h3>
+<p>Das ist das aktuelle Verhalten. Ablehnen speichert die Antwortentscheidung, führt aber kein automatisches Rückgängigmachen aus.</p>
+<h3 id="response-heißt-incrementidx">Response heißt <code>_increment.idx</code></h3>
+<p>Das ist der aktuell verwendete Dateiname. Prüfen Sie den Inhalt und die Vorgaben Ihres Übergabeprozesses.</p>
+<h3 id="keine-neuen-änderungen">„Keine neuen Änderungen!“</h3>
+<p>Es wurde keine eigene Verschiebung, Löschung, Ergänzung oder Ablehnung gefunden.</p>
+<h3 id="obj-wird-nicht-zugeordnet">OBJ wird nicht zugeordnet</h3>
+<ul>
+<li>Dateiname prüfen.</li>
+<li>Materialnummer prüfen.</li>
+<li>Hintmap zuerst laden.</li>
+<li>Importreport lesen.</li>
+<li>sicherstellen, dass die Datei auf <code>.obj</code> endet.</li>
+</ul>
+<h3 id="manuelles-hinzufügen-funktioniert-nicht">Manuelles Hinzufügen funktioniert nicht</h3>
+<p>In der normalen Oberfläche muss eine OBJ-Datei ausgewählt sein.</p>
+<h3 id="änderungen-sind-nach-dem-neuladen-verschwunden">Änderungen sind nach dem Neuladen verschwunden</h3>
+<p>Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neuladen exportiert werden.</p>
+<h3 id="exportdatei-ist-nicht-auffindbar">Exportdatei ist nicht auffindbar</h3>
+<ul>
+<li>Downloadordner des Browsers prüfen.</li>
+<li>Browser-Downloadanzeige öffnen.</li>
+<li>blockierte Downloads freigeben.</li>
+<li>nach <code>_filtered.idx</code> oder <code>_increment.idx</code> suchen.</li>
+</ul>
+<hr>
+<h2 id="20-abschlusscheck-vor-der-weitergabe">20. Abschlusscheck vor der Weitergabe</h2>
+<h3 id="daten">Daten</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Richtige Baseline geladen</li>
+<li><input disabled="" type="checkbox"> Alle benötigten Inkremente geladen</li>
+<li><input disabled="" type="checkbox"> Reihenfolge der Inkremente geprüft</li>
+<li><input disabled="" type="checkbox"> Endzustand unter <strong>Aktuell</strong> kontrolliert</li>
+</ul>
+<h3 id="änderungen">Änderungen</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Alle Verschiebungen plausibel</li>
+<li><input disabled="" type="checkbox"> Keine unbeabsichtigten Löschungen</li>
+<li><input disabled="" type="checkbox"> Ausblenden und Löschen nicht verwechselt</li>
+<li><input disabled="" type="checkbox"> Manuell hinzugefügte Bauteile geprüft</li>
+<li><input disabled="" type="checkbox"> Ablehnungen korrekt gesetzt</li>
+</ul>
+<h3 id="darstellung">Darstellung</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Top-/Bottom-Seite plausibel</li>
+<li><input disabled="" type="checkbox"> Keine auffälligen Ausreißer</li>
+<li><input disabled="" type="checkbox"> OBJ-Modelle richtig ausgerichtet</li>
+<li><input disabled="" type="checkbox"> Board und Bauteile vollständig sichtbar</li>
+</ul>
+<h3 id="export">Export</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Richtige Exportart gewählt</li>
+<li><input disabled="" type="checkbox"> Datei erfolgreich heruntergeladen</li>
+<li><input disabled="" type="checkbox"> Dateiname und Dateigröße geprüft</li>
+<li><input disabled="" type="checkbox"> Ergebnis im vorgesehenen Zielsystem getestet</li>
+<li><input disabled="" type="checkbox"> Ausgangsdateien und Export gemeinsam archiviert</li>
+</ul>
+<hr>
+<h2 id="kurzübersicht">Kurzübersicht</h2>
+<table>
+<thead>
+<tr>
+<th>Ich möchte …</th>
+<th>Aktion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>eine Leiterplatte öffnen</td>
+<td>Baseline laden</td>
+</tr>
+<tr>
+<td>Änderungen nachvollziehen</td>
+<td>Inkremente laden und Zeitstrahl verwenden</td>
+</tr>
+<tr>
+<td>ein Bauteil finden</td>
+<td>Suche links</td>
+</tr>
+<tr>
+<td>ein Bauteil nur verstecken</td>
+<td>Auge</td>
+</tr>
+<tr>
+<td>ein Bauteil aus dem Ergebnis entfernen</td>
+<td>Papierkorb</td>
+</tr>
+<tr>
+<td>mehrere Bauteile wählen</td>
+<td><code>Strg</code> oder <code>Umschalt</code> + Klick</td>
+</tr>
+<tr>
+<td>ein Bauteil verschieben</td>
+<td><strong>Aktuell</strong> → auswählen → Koordinaten → <strong>Anwenden</strong></td>
+</tr>
+<tr>
+<td>eine Änderung ablehnen</td>
+<td>Inkrementschritt → <strong>Ablehnen</strong></td>
+</tr>
+<tr>
+<td>vollständigen Stand speichern</td>
+<td><strong>Export</strong></td>
+</tr>
+<tr>
+<td>nur eigene Änderungen speichern</td>
+<td><strong>Inkrement</strong></td>
+</tr>
+<tr>
+<td>eine Antwortdatei erzeugen</td>
+<td><strong>Response exportieren</strong></td>
+</tr>
+<tr>
+<td>Ansicht wiederfinden</td>
+<td><strong>ISO</strong></td>
+</tr>
+<tr>
+<td>Auswahl groß anzeigen</td>
+<td><strong>Zoom</strong></td>
+</tr>
+</tbody></table>
+</main>
+  </div>
+  <script>
+    const navigation = document.getElementById("help-navigation");
+    const headings = Array.from(document.querySelectorAll(".help-article h2"));
+    headings.forEach((heading) => {
+      const link = document.createElement("a");
+      link.href = "#" + heading.id;
+      link.textContent = heading.textContent;
+      navigation.appendChild(link);
+    });
+
+    const links = Array.from(navigation.querySelectorAll("a"));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        links.forEach((link) => {
+          link.classList.toggle("active", link.hash === "#" + entry.target.id);
+        });
+      });
+    }, { rootMargin: "-80px 0px -75% 0px" });
+    headings.forEach((heading) => observer.observe(heading));
+
+    function closeHelp() {
+      if (window.parent !== window) {
+        window.parent.postMessage("idx-help-close", "*");
+      } else {
+        window.close();
+      }
+    }
+    document.getElementById("close-help").addEventListener("click", closeHelp);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeHelp();
+    });
+  </script>
+</body>
+</html>
