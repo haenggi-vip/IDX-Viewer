@@ -989,7 +989,7 @@
             scene.remove(currentGroup); currentGroup = new THREE.Group(); currentGroup.rotation.x = -Math.PI / 2; scene.add(currentGroup);
             for (let k in meshes) delete meshes[k]; simplifiedMeshes = {}; detailedMeshes = {};
             const uiList = document.getElementById('components-list'); uiList.innerHTML = '';
-            const cutouts = components.filter(c => c.type === "Cutout" || c.name.includes("HOLE") || c.isDeleted);
+            const cutouts = components.filter(c => !c.isDeleted && (c.type === "Cutout" || c.name.includes("HOLE")));
             let boardComp = null, boardMesh = null; const features = [], parts = [];
 
             components.forEach(comp => {
