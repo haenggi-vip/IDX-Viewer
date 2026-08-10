@@ -26,49 +26,201 @@
         let incrementHistory = [], currentHistoryStep = -1, baselineComponents = [];
         let manualCount = 0;
 
+        // Complete validation is performed before any import state is changed.
+        function validationElements(node, name) {
+            return node ? Array.from(node.getElementsByTagNameNS("*", name)) : [];
+        }
+        function validationUserProperty(xmlDoc, key) {
+            const property = validationElements(xmlDoc, "UserProperty").find(node => {
+                const keyNode = validationElements(node, "Key")[0];
+                const objectName = keyNode && validationElements(keyNode, "ObjectName")[0];
+                return keyNode && (keyNode.textContent.trim() === key || objectName?.textContent.trim() === key);
+            });
+            return property ? validationElements(property, "Value")[0]?.textContent.trim() || "" : "";
+        }
+        function collectIDXIds(xmlDoc) {
+            const ids = new Set();
+            if (xmlDoc) Array.from(xmlDoc.getElementsByTagName("*")).forEach(node => {
+                const id = node.getAttribute("id"); if (id) ids.add(id.trim());
+            });
+            return ids;
+        }
+        function validateIDXText(xmlText, { kind, fileName, baselineDocument = null, referenceDocuments = [] }) {
+            const result = { valid:false, fileName, errors:[], warnings:[], document:null, metadata:{} };
+            if (!/\.idx$/i.test(fileName || "")) result.errors.push("Die Datei besitzt nicht die Endung .idx.");
+            if (!xmlText || !xmlText.trim()) { result.errors.push("Die Datei ist leer."); return result; }
+            if (/^\s*(?:<!doctype\s+html|<html[\s>])/i.test(xmlText)) {
+                result.errors.push("Die Datei enthält HTML statt eines IDX-Dokuments."); return result;
+            }
+            const xmlDoc = new DOMParser().parseFromString(xmlText, "application/xml");
+            const parserError = xmlDoc.documentElement?.localName === "parsererror" ? xmlDoc.documentElement :
+                Array.from(xmlDoc.getElementsByTagNameNS("*", "parsererror"))[0] ||
+                Array.from(xmlDoc.getElementsByTagName("*")).find(node => node.localName === "parsererror");
+            if (parserError) {
+                result.errors.push(`Das XML ist nicht wohlgeformt: ${parserError.textContent.replace(/\s+/g, " ").trim().slice(0, 240)}`);
+                return result;
+            }
+            result.document = xmlDoc;
+            if (xmlDoc.documentElement?.localName !== "EDMDDataSet") {
+                result.errors.push(`Ungültiges Wurzelelement: erwartet wird EDMDDataSet, gefunden wurde ${xmlDoc.documentElement?.localName || "kein Element"}.`);
+                return result;
+            }
+            const namespaces = new Set(Array.from(xmlDoc.getElementsByTagName("*")).map(node => node.namespaceURI).filter(Boolean));
+            if (!Array.from(namespaces).some(uri => /^https?:\/\/www\.prostep\.org\/ecad-mcad\/edmd\/\d+(?:\.\d+)?\//i.test(uri))) {
+                result.errors.push("Es wurde kein unterstützter PROSTEP-EDMD/IDX-Namensraum gefunden.");
+            }
+            if (!validationElements(xmlDoc, "Header").length) result.errors.push("Der verpflichtende IDX-Header fehlt.");
+            const idxMode = validationUserProperty(xmlDoc, "IDX_MODE");
+            const idxVersion = validationUserProperty(xmlDoc, "IDX_VERSION");
+            result.metadata = { idxMode, idxVersion };
+            if (!idxMode) result.errors.push("Im Header fehlt die Eigenschaft IDX_MODE.");
+            if (!idxVersion || !/^\d+(?:\.\d+)*$/.test(idxVersion)) result.errors.push("IDX_VERSION fehlt oder ist ungültig.");
+            const knownIds = collectIDXIds(xmlDoc); collectIDXIds(baselineDocument).forEach(id => knownIds.add(id));
+            referenceDocuments.filter(Boolean).forEach(document => collectIDXIds(document).forEach(id => knownIds.add(id)));
+            const unresolved = new Set();
+            [["ItemInstance","Item"],["ShapeElement","DefiningShape"],["CurveSet2d","DetailedGeometricModelElement"],["PolyLine","Point"]]
+                .forEach(([ownerName, refName]) => validationElements(xmlDoc, ownerName).forEach(owner =>
+                    validationElements(owner, refName).forEach(ref => {
+                        const value = ref.textContent.trim(); if (value && !knownIds.has(value)) unresolved.add(`${refName} → ${value}`);
+                    })
+                ));
+            if (unresolved.size) result.errors.push(`Nicht auflösbare IDX-Referenzen: ${Array.from(unresolved).slice(0,8).join(", ")}.`);
+            ["tx","ty","tz","xx","xy","yx","yy"].forEach(axis => validationElements(xmlDoc, axis).forEach(node => {
+                const valueNode = validationElements(node, "Value")[0], raw = valueNode ? valueNode.textContent.trim() : node.textContent.trim();
+                if (raw && !Number.isFinite(Number(raw))) result.errors.push(`Ungültiger Zahlenwert in ${axis}: „${raw}“.`);
+            }));
+            const itemDefinitions = validationElements(xmlDoc, "Item").filter(node => validationElements(node, "ItemType").length);
+            const instances = validationElements(xmlDoc, "ItemInstance");
+            if (kind === "baseline") {
+                if (!itemDefinitions.some(node => validationElements(node, "ItemType")[0].textContent.trim() === "assembly")) result.errors.push("Die Datei enthält keine IDX-Assembly.");
+                if (!instances.length) result.errors.push("Die Baseline enthält keine ItemInstance-Elemente.");
+                if (!validationElements(xmlDoc, "CurveSet2d").length && !validationElements(xmlDoc, "ShapeElement").length) result.errors.push("Die Baseline enthält keine unterstützte IDX-Geometrie.");
+            } else {
+                const relation = validationElements(xmlDoc,"PredecessorItem").length || validationElements(xmlDoc,"NewItem").length;
+                const deletion = validationElements(xmlDoc,"DeletedInstanceName").length;
+                const response = validationElements(xmlDoc,"Response").length || validationElements(xmlDoc,"Accept").length;
+                const placement = instances.some(node => validationElements(node,"Transformation").length);
+                if (!(relation || deletion || response || placement)) result.errors.push("Die Datei enthält keine vom Viewer unterstützten Increment-Änderungen.");
+                if (!relation && !deletion && !response) result.errors.push("Die Datei ist keine eindeutige Increment-Datei.");
+            }
+            result.errors = Array.from(new Set(result.errors)); result.valid = !result.errors.length; return result;
+        }
+        function showIDXValidationReport(title, results) {
+            document.getElementById("idx-validation-modal")?.remove();
+            const overlay = document.createElement("div"); overlay.id = "idx-validation-modal";
+            overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1200;display:flex;align-items:center;justify-content:center;padding:24px;";
+            const panel = document.createElement("div"); panel.style.cssText = "width:min(760px,95vw);max-height:85vh;overflow:auto;background:#2f3640;border:1px solid #e74c3c;border-radius:8px;padding:16px;color:#d2dae2;font:13px sans-serif;";
+            const heading = document.createElement("strong"); heading.textContent = title; heading.style.color = "#ff5e57";
+            const summary = document.createElement("p"); summary.textContent = `${results.filter(r => !r.valid).length} von ${results.length} Datei(en) abgelehnt. Es wurde nichts importiert.`;
+            const close = document.createElement("button"); close.textContent = "Schließen"; close.onclick = () => overlay.remove();
+            panel.append(heading, summary, close);
+            results.forEach(result => {
+                const section = document.createElement("section"); section.style.marginTop = "12px";
+                const name = document.createElement("strong"); name.textContent = `${result.valid ? "Gültig" : "Ungültig"}: ${result.fileName}`; section.appendChild(name);
+                [...result.errors, ...result.warnings.map(w => `Hinweis: ${w}`)].forEach(message => { const line=document.createElement("div"); line.textContent=message; section.appendChild(line); });
+                panel.appendChild(section);
+            });
+            overlay.appendChild(panel); document.body.appendChild(overlay);
+        }
+
         // --- 3. INPUT HANDLERS ---
-        document.getElementById('file-input').addEventListener('change', e => {
+        document.getElementById('file-input').addEventListener('change', async e => {
             const file = e.target.files[0]; if (!file) return;
-            originalFileName = file.name; document.getElementById('loading').style.display = 'block';
-            document.getElementById('inc-file-input').disabled = false;
-            incrementHistory = []; currentHistoryStep = -1;
-            document.getElementById('history-timeline').style.display = 'none';
-            const reader = new FileReader();
-            reader.onload = ev => {
-                const xml = ev.target.result;
-                originalXmlDoc = new DOMParser().parseFromString(xml, "application/xml");
-                setTimeout(() => { 
-                    processIDX(xml); 
-                    baselineComponents = JSON.parse(JSON.stringify(allComponents)); 
-                }, 50);
+            const xml = await file.text();
+            const validation = validateIDXText(xml, { kind:"baseline", fileName:file.name });
+            if (!validation.valid) {
+                showIDXValidationReport("IDX-Baseline ist ungültig", [validation]);
+                e.target.value = ""; return;
+            }
+            const previousState = {
+                originalXmlDoc, originalFileName, incrementHistory, currentHistoryStep,
+                baselineComponents:JSON.parse(JSON.stringify(baselineComponents)),
+                allComponents:JSON.parse(JSON.stringify(allComponents))
             };
-            reader.readAsText(file);
+            document.getElementById('loading').style.display = 'block';
+            try {
+                processIDX(xml, validation.document);
+                originalXmlDoc = validation.document; originalFileName = file.name;
+                incrementHistory = []; currentHistoryStep = -1;
+                baselineComponents = JSON.parse(JSON.stringify(allComponents));
+                window.allComponents = allComponents;
+                document.getElementById('inc-file-input').disabled = false;
+                document.getElementById('history-timeline').style.display = 'none';
+            } catch (error) {
+                originalXmlDoc = previousState.originalXmlDoc; originalFileName = previousState.originalFileName;
+                incrementHistory = previousState.incrementHistory; currentHistoryStep = previousState.currentHistoryStep;
+                baselineComponents = previousState.baselineComponents; allComponents = previousState.allComponents;
+                window.allComponents = allComponents;
+                document.getElementById('loading').style.display = 'none';
+                showIDXValidationReport("IDX-Baseline konnte nicht importiert werden", [{
+                    valid:false, fileName:file.name, errors:[`Interner Importfehler: ${error.message}`], warnings:[]
+                }]);
+            }
+            e.target.value = "";
         });
 
         document.getElementById('inc-file-input').addEventListener('change', async e => {
-            const hasManualChanges = allComponents.some(c => c.isModified || c.isManuallyAdded || c.isDeleted);
-            if (hasManualChanges && !confirm("Aktuelle Änderungen verwerfen und Inkremente importieren?")) {
-                e.target.value = '';
-                return;
-            }
             const files = Array.from(e.target.files).sort((a, b) => a.lastModified - b.lastModified);
-            if (files.length === 0) return;
+            if (!files.length) return;
+            const preparedFiles = [];
+            for (const file of files) {
+                const xml = await file.text();
+                const referenceDocuments = [
+                    ...incrementHistory.map(entry => entry.document),
+                    ...preparedFiles.map(entry => entry.validation.document)
+                ].filter(Boolean);
+                preparedFiles.push({
+                    file, xml,
+                    validation:validateIDXText(xml, {
+                        kind:"increment", fileName:file.name,
+                        baselineDocument:originalXmlDoc,
+                        referenceDocuments
+                    })
+                });
+            }
+            if (preparedFiles.some(entry => !entry.validation.valid)) {
+                showIDXValidationReport("IDX-Increment-Prüfung fehlgeschlagen", preparedFiles.map(entry => entry.validation));
+                e.target.value = ""; return;
+            }
+            const hasManualChanges = allComponents.some(c =>
+                c.isModified || c.isManuallyAdded || c.manualDeletedState !== undefined
+            );
+            if (hasManualChanges && !confirm("Aktuelle Änderungen verwerfen und Inkremente importieren?")) {
+                e.target.value = ''; return;
+            }
+            const previousState = {
+                incrementHistory, currentHistoryStep,
+                allComponents:JSON.parse(JSON.stringify(allComponents))
+            };
             document.getElementById('loading').style.display = 'block';
-            incrementHistory = [];
-            for (const file of files) { 
-                incrementHistory.push({ name: file.name, xml: await file.text(), date: new Date().toLocaleString(), changes: [] }); 
+            try {
+                const newHistoryEntries = preparedFiles.map(entry => ({
+                    name:entry.file.name, xml:entry.xml, document:entry.validation.document,
+                    date:new Date().toLocaleString(), changes:[], validation:entry.validation.metadata
+                }));
+                incrementHistory = previousState.incrementHistory.concat(newHistoryEntries);
+                currentHistoryStep = incrementHistory.length - 1;
+                allComponents = JSON.parse(JSON.stringify(baselineComponents));
+                window.allComponents = allComponents;
+                for (const step of incrementHistory) {
+                    await processIncrementStep(step.xml, true, step.document);
+                }
+                updateHistoryUI();
+                await applyHistoryStep(currentHistoryStep);
+            } catch (error) {
+                incrementHistory = previousState.incrementHistory;
+                currentHistoryStep = previousState.currentHistoryStep;
+                allComponents = previousState.allComponents;
+                window.allComponents = allComponents;
+                build3DScene(allComponents, window.lastBoardThickness || 1.6);
+                updateHistoryUI();
+                document.getElementById('loading').style.display = 'none';
+                showIDXValidationReport("IDX-Increments konnten nicht importiert werden", [{
+                    valid:false, fileName:preparedFiles.map(entry => entry.file.name).join(", "),
+                    errors:[`Interner Importfehler: ${error.message}`], warnings:[]
+                }]);
             }
-            currentHistoryStep = incrementHistory.length - 1;
-            
-            // Pre-process all steps sequentially to populate the 'changes' array for the UI
-            allComponents = JSON.parse(JSON.stringify(baselineComponents));
-            for (let i = 0; i < incrementHistory.length; i++) {
-                await processIncrementStep(incrementHistory[i].xml, true);
-            }
-            
-            updateHistoryUI();
-            await applyHistoryStep(currentHistoryStep);
-            e.target.value = ''; // allow reloading the same file
+            e.target.value = '';
         });
 
         function toggleAccordion(header) {
@@ -242,7 +394,7 @@
             let limit = stepIdx === 999 ? incrementHistory.length : (stepIdx + 1);
             for (let i = 0; i < limit; i++) { 
                 let highlight = (stepIdx !== 999) && (i === stepIdx);
-                await processIncrementStep(incrementHistory[i].xml, highlight); 
+                await processIncrementStep(incrementHistory[i].xml, highlight, incrementHistory[i].document);
             }
             
             allComponents.forEach(c => { c.origX = c.x; c.origY = c.y; c.origZ = c.z; c.isModified = false; c.manualDeletedState = undefined; });
@@ -280,12 +432,12 @@
 
 
 
-        async function processIncrementStep(xmlText, isHighlightStep) {
+        async function processIncrementStep(xmlText, isHighlightStep, validatedDocument = null) {
             const stepIndex = incrementHistory.findIndex(h => h.xml === xmlText);
             const stepChanges = (stepIndex !== -1) ? incrementHistory[stepIndex].changes : [];
             if (isHighlightStep) stepChanges.length = 0; 
             
-            const xmlDoc = new DOMParser().parseFromString(xmlText, "application/xml");
+            const xmlDoc = validatedDocument || new DOMParser().parseFromString(xmlText, "application/xml");
             const findComp = (id, n) => {
                 if (id) { const c = allComponents.find(c => c.uid === id); if (c) return c; }
                 if (n && n !== "Unknown" && !id) {
@@ -541,8 +693,8 @@
         function getNS(node, tag) { if (!node) return []; return Array.from(node.getElementsByTagNameNS("*", tag)); }
         function formatMaterialNumber(num) { if (/^\d+$/.test(num)) return num.padStart(18, '0'); return num; }
 
-        function processIDX(xmlText) {
-            const xmlDoc = new DOMParser().parseFromString(xmlText, "application/xml"), points = {}, polylines = {}, circles = {}, curveSets = {}, shapes = {}, singleItems = {};
+        function processIDX(xmlText, validatedDocument = null) {
+            const xmlDoc = validatedDocument || new DOMParser().parseFromString(xmlText, "application/xml"), points = {}, polylines = {}, circles = {}, curveSets = {}, shapes = {}, singleItems = {};
             getNS(xmlDoc, "CartesianPoint").forEach(p => points[p.getAttribute("id")] = { x: parseFloat(getNS(p, "X")[0]?.textContent||0), y: parseFloat(getNS(p, "Y")[0]?.textContent||0) });
             getNS(xmlDoc, "PolyLine").forEach(pl => polylines[pl.getAttribute("id")] = getNS(pl, "Point").map(pt => pt.textContent));
             getNS(xmlDoc, "CircleCenter").forEach(c => circles[c.getAttribute("id")] = { centerId: getNS(c, "Center")[0]?.textContent, radius: parseFloat(getNS(getNS(c, "Diameter")[0], "Value")[0]?.textContent||0)/2 });
