@@ -18,7 +18,10 @@ Anschließend exportiert das Tool normgerechte IDX-Responses, um den digitalen K
 - **Akzeptieren / Ablehnen:** Einfaches Bewerten von Inkrementen per Knopfdruck. Abgelehnte Komponenten schnappen auf ihre Ursprungsposition zurück.
 - **Manuelle Gegenvorschläge:** Per Drag & Drop oder über die Koordinaten-Maske lassen sich Bauteile verschieben oder neu hinzufügen.
 - **Integrierte Makro-Engine:** Skript-basierte Automatisierung von Standard-Aufgaben (Ausblenden von Bauteilen, automatisches Setzen von Attributen etc.).
-- **MCAD / ECAD Mapping:** Nutzt `.map` Dateien, um kryptische ECAD Bezeichnungen (RefDes) auf echte interne ERP / MCAD Materialnummern umzuschlüsseln.
+- **MCAD / ECAD Mapping:** Nutzt `.map` Dateien, um kryptische ECAD Bezeichnungen (RefDes) auf echte interne ERP / MCAD Materialnummern umzuschlüsseln. Optional lassen sich die gemappten Namen über **MCAD-Namen beim Export ins File schreiben** auch in die Exportdatei übernehmen.
+- **Validierung vor dem Import:** Jede IDX-Datei wird geprüft, bevor sie übernommen wird (wohlgeformtes XML, Wurzelelement, Namensraum, Header, auflösbare Referenzen). Schlägt die Prüfung fehl, bleibt der bisherige Arbeitsstand unverändert. Zusätzlich geladene Inkremente werden an den Zeitstrahl angehängt statt ihn zu ersetzen.
+- **Persistente Baumreihenfolge:** Umsortieren per Drag & Drop oder über **Ganz nach oben** / **Ganz nach unten**. Die eingestellte Reihenfolge überlebt den Neuaufbau des Modellbaums und wird in beide Exporte übernommen.
+- **Optionale ID-Neunummerierung:** Über **IDs neu nummerieren (Reihenfolge für Creo)** werden die Instanz-IDs fortlaufend gemäß Modellbaum vergeben, da Creo die Baugruppenkomponenten nach der Instanznummer sortiert und nicht nach der Reihenfolge im Dateiinhalt. Standardmäßig ausgeschaltet, da ECAD-Inkremente auf die Original-IDs verweisen. Details und Risiken siehe [Anwenderdokumentation](docs/Anwenderdokumentation.md).
 
 ## 💻 Lokale Ausführung / Nutzung
 
@@ -54,6 +57,17 @@ Zum Ausführen der Tests:
 npm install
 npx playwright test
 ```
+
+Die Tests `test_idx_preimport_validation.spec.js`, `test_deleted_component_rendering.spec.js` und
+`test_export_smoke.spec.js` laufen ohne Browser (jsdom) und benötigen kein `npx playwright install`:
+
+```bash
+npx playwright test tests/test_export_smoke.spec.js
+```
+
+`test_e2e_full.spec.js` und `test_auto_macro.spec.js` benötigen zusätzlich einen installierten
+Chromium sowie reale IDX-Beispieldateien, die nicht im Repository liegen (`*.idx` steht in
+`.gitignore`).
 
 ## 📜 Lizenz & Herkunft
 

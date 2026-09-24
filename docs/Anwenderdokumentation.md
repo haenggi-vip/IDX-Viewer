@@ -2,7 +2,7 @@
 
 ## Advanced 3D IDX Viewer
 
-**Dokumentstand:** 29. Juli 2026
+**Dokumentstand:** 24. September 2026
 **Anwendung:** `idx.html`
 
 Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.
@@ -42,6 +42,7 @@ Eine ausführlichere technische Beschreibung befindet sich in der separaten [Ben
 18. [Tastatur- und Mausübersicht](#18-tastatur--und-mausübersicht)
 19. [Häufige Probleme](#19-häufige-probleme)
 20. [Abschlusscheck vor der Weitergabe](#20-abschlusscheck-vor-der-weitergabe)
+21. [Änderungen / Versionshinweise](#21-änderungen--versionshinweise)
 
 ---
 
@@ -82,8 +83,10 @@ Empfohlener Ablauf:
 3. Komponenten per Drag-and-drop oder mit **Ganz nach oben** beziehungsweise **Ganz nach unten** umsortieren.
 4. Zu entfernende Komponenten mit dem Papierkorb markieren.
 5. Das Ergebnis im 3D-Modell und unter **Aktuelle manuelle Änderungen** kontrollieren.
-6. Den bereinigten Stand über **Export** als neue `_filtered.idx`-Datei speichern.
-7. Die exportierte Datei anschließend in Creo weiterverwenden.
+6. Bei Bedarf **IDs neu nummerieren (Reihenfolge für Creo)** einschalten, damit Creo die Komponenten in der
+   eingestellten Reihenfolge anzeigt (siehe Abschnitt 15.1).
+7. Den bereinigten Stand über **Export** als neue `_filtered.idx`-Datei speichern.
+8. Die exportierte Datei anschließend in Creo weiterverwenden.
 
 > **Wichtig:** Das Auge blendet Komponenten nur aus. Nur der Papierkorb kennzeichnet eine Komponente als gelöscht
 > beziehungsweise vom exportierten Ergebnis ausgeschlossen. Bewahren Sie die ursprüngliche IDX-Datei unverändert
@@ -206,8 +209,9 @@ Rechts befinden sich:
 
 - **ISO** und **Vollbild**,
 - die Export-Schaltflächen,
+- die Option **IDs neu nummerieren (Reihenfolge für Creo)**,
 - Baseline und Inkremente,
-- Hintmap und MCAD-Namen,
+- Hintmap und MCAD-Namen, einschließlich der Option **MCAD-Namen beim Export ins File schreiben**,
 - OBJ-Modelle,
 - Sichtbarkeitsfilter,
 - manuelles Hinzufügen,
@@ -215,6 +219,11 @@ Rechts befinden sich:
 - der Makro-Editor.
 
 Die blauen Abschnittsüberschriften können durch Anklicken ein- und ausgeklappt werden.
+
+> **Hinweis zu den Abbildungen:** Die Bildschirmfotos in dieser Anleitung stammen aus einer älteren
+> Version und zeigen die beiden Kontrollkästchen **IDs neu nummerieren (Reihenfolge für Creo)** und
+> **MCAD-Namen beim Export ins File schreiben** noch nicht. Das erste steht in der Kopfzeile neben den
+> Export-Schaltflächen, das zweite im Bereich **Hintmap** direkt unter **MCAD Namen verwenden**.
 
 ### 4.4 Unten: Änderungshistorie
 
@@ -257,7 +266,25 @@ Prüfen Sie:
 
 Wenn das Modell nicht gut zu sehen ist, klicken Sie auf **ISO**.
 
-> **Hinweis:** Das Laden einer neuen Baseline ersetzt den bisherigen Arbeitsstand.
+> **Hinweis:** Das Laden einer neuen Baseline ersetzt den bisherigen Arbeitsstand. Zurückgesetzt
+> werden dabei auch der Zeitstrahl, alle manuellen Änderungen, die gespeicherte Baumreihenfolge und
+> eine zuvor beim Export vergebene Nummerierung. Die Einstellungen der beiden Export-Optionen
+> bleiben erhalten, weil sie im Browser gespeichert werden.
+
+### Automatische Prüfung vor dem Laden
+
+Jede Datei wird geprüft, **bevor** sie übernommen wird. Geprüft werden unter anderem:
+
+- Dateiendung (`.idx` oder `.xml`) und nicht leerer Inhalt,
+- wohlgeformtes XML und das Wurzelelement `EDMDDataSet`,
+- ein gültiger PROSTEP-EDMD/IDX-Namensraum,
+- der Header mit den Eigenschaften `IDX_MODE` und `IDX_VERSION`,
+- auflösbare interne Verweise und gültige Zahlenwerte in Transformationen,
+- bei einer Baseline zusätzlich: Item-Definitionen, eine Assembly, ItemInstances und Geometrie.
+
+Wird die Datei abgelehnt, erscheint ein Fenster mit allen gefundenen Fehlern und dem Hinweis **Es wurde nichts importiert**. Der bisherige Arbeitsstand – Modell, Auswahl und Zeitstrahl – bleibt dabei unverändert. Schließen Sie das Fenster, korrigieren Sie die Datei und laden Sie sie erneut.
+
+Unkritische Auffälligkeiten wie mehrfach verwendete IDs blockieren den Import nicht. Sie werden als Hinweis in der Browser-Konsole protokolliert.
 
 ---
 
@@ -357,6 +384,19 @@ im Modellbaum umsortiert werden.
 
 Das verändert nicht die Position im 3D-Modell.
 
+Die eingestellte Reihenfolge wird gespeichert und bleibt erhalten, wenn der Modellbaum neu aufgebaut
+wird – zum Beispiel beim Wechsel im Zeitstrahl, beim Löschen oder Wiederherstellen eines Bauteils
+oder nach dem Neuladen der Seite. Beide Exporte (**Export** und **Inkrement**) schreiben die
+Einträge in genau dieser Reihenfolge.
+
+> **Hinweis:** Das IDX-Format verlangt, dass jede Instanz unterhalb ihrer Bauteildefinition steht.
+> Eine Reihenfolge, die Instanzen verschiedener Bauteile beliebig mischt, lässt sich im Dateiaufbau
+> deshalb nicht exakt abbilden. Für Creo ist ohnehin die Instanznummer maßgeblich – siehe
+> Abschnitt 15.1, Option **IDs neu nummerieren (Reihenfolge für Creo)**.
+
+Beim Laden einer neuen Baseline wird die gespeicherte Reihenfolge zusammen mit den übrigen manuellen
+Änderungen zurückgesetzt.
+
 ---
 
 ## 8. Bauteile einblenden, ausblenden oder löschen
@@ -424,6 +464,20 @@ Auch diese Typfilter verändern nur die Anzeige, nicht den Export.
 4. Warten Sie, bis der Zeitstrahl aufgebaut ist.
 
 ![Dateiauswahl zum gemeinsamen Laden der Inkremente](screenshots/annotated_09_inkremente_laden.jpg)
+
+Auch hier wird jede Datei zuerst geprüft. Schlägt die Prüfung bei **einer** Datei fehl, wird der gesamte Ladevorgang abgebrochen und keine der ausgewählten Dateien übernommen. Das Fenster listet dann alle Dateien mit ihrem jeweiligen Ergebnis auf.
+
+> **Hinweis:** Werden Inkremente geladen, während bereits Inkremente im Zeitstrahl stehen, werden die neuen Dateien **angehängt** und ersetzen den bisherigen Zeitstrahl nicht. So lassen sich nachgelieferte Inkremente schrittweise ergänzen. Möchten Sie von vorne beginnen, laden Sie die Baseline erneut.
+
+Eine Datei, die bereits im Zeitstrahl steht, wird dabei nicht ein zweites Mal übernommen. Die
+Anwendung meldet das mit:
+
+```text
+Bereits geladen und daher übersprungen:
+```
+
+und übernimmt nur die übrigen Dateien. Das verhindert doppelt gezählte Änderungen und einen doppelten
+Eintrag im Änderungsprotokoll der exportierten Baseline.
 
 ### 9.2 Reihenfolge prüfen
 
@@ -628,9 +682,34 @@ Danach zeigt der Modellbaum die zugeordneten MCAD-Namen, soweit eine Zuordnung v
 
 - angezeigte Namen,
 - Suchergebnisse,
-- Zuordnung von OBJ-Dateien.
+- Zuordnung von OBJ-Dateien,
+- auf Wunsch zusätzlich der Inhalt der exportierten Datei (siehe unten).
 
 Die ursprünglichen Daten der Baseline werden durch das bloße Umschalten nicht umbenannt.
+
+### MCAD-Namen beim Export ins File schreiben
+
+Unter **MCAD Namen verwenden** steht die zusätzliche Option **MCAD-Namen beim Export ins File
+schreiben**. Sie ist standardmäßig ausgeschaltet, wird für Ihren Browser gespeichert und ist nur
+auswählbar, solange **MCAD Namen verwenden** aktiv ist.
+
+- **Ausgeschaltet (Standard):** Die MCAD-Namen dienen nur der Anzeige. Die exportierte Datei enthält
+  unverändert die ECAD-Namen.
+- **Eingeschaltet:** Beim **Export** und beim **Inkrement** werden die zugeordneten Namen in die
+  Exportkopie geschrieben, und zwar an genau die Stellen, aus denen der Viewer sie liest: der
+  Instanzname der Komponente und die Materialnummer des zugehörigen Bauteils.
+
+Bauteile ohne Eintrag in der Hintmap behalten ihren ursprünglichen Namen. Teilen sich mehrere
+Instanzen dasselbe Bauteil, wird dessen Materialnummer genau einmal umgesetzt. Ergeben sich dabei
+widersprüchliche Zuordnungen, bleibt die Originalnummer stehen.
+
+> **Achtung:** Namen sind im IDX auch ein Zuordnungsmerkmal. Löschmeldungen an das Zielsystem
+> (`DeletedInstanceName`) behalten deshalb immer den ECAD-Originalnamen, damit das Zielsystem die
+> betroffene Komponente weiterhin findet. Schalten Sie die Option nur ein, wenn das Zielsystem die
+> MCAD-Namen erwartet.
+
+> **Hinweis:** Auch diese Option verändert nur die exportierte Datei. Ihr Arbeitsstand im Viewer
+> bleibt unverändert.
 
 ### Wenn Zuordnungen fehlen
 
@@ -696,6 +775,24 @@ _filtered.idx
 
 Verwenden Sie diesen Export, wenn Sie einen möglichst vollständigen aktuellen Stand benötigen.
 
+Oben rechts steht zusätzlich die Option **IDs neu nummerieren (Reihenfolge für Creo)**. Sie ist im
+Auslieferungszustand **ausgeschaltet** und wird für Ihren Browser gespeichert.
+
+- **Ausgeschaltet (Standard):** Die Instanz-IDs der Originaldatei bleiben unverändert. Im Export wird
+  nur die Reihenfolge der Einträge in der Datei angepasst. Wählen Sie diese Einstellung, solange Sie
+  mit ECAD-Inkrementen arbeiten, die sich auf die Original-IDs beziehen.
+- **Eingeschaltet:** Die Instanz-IDs (zum Beispiel `ITEM_INST_1`, `ITEM_INST_2`, ...) werden fortlaufend
+  gemäß der Reihenfolge im Modellbaum vergeben. Creo sortiert die Baugruppenkomponenten nach dieser
+  Nummer, nicht nach der Reihenfolge im Dateiinhalt. Nur so erscheint die eingestellte Reihenfolge auch
+  in Creo. Präfix und Schreibweise der Originaldatei bleiben erhalten, manuell hinzugefügte Bauteile
+  werden in dieselbe Nummerierung eingereiht.
+
+> **Achtung:** ECAD-Inkremente verweisen auf die Original-IDs. Nach dem Umnummerieren passen sie nur
+> noch zu der neu exportierten Baseline. Schalten Sie die Option deshalb nur ein, wenn die Reihenfolge
+> in Creo stimmen muss, und geben Sie die neu exportierte Baseline im Austauschprozess weiter.
+
+> **Hinweis:** Die Nummerierung ändert nur die exportierte Datei. Ihr Arbeitsstand im Viewer bleibt unverändert.
+
 ### 15.2 Inkrement
 
 **Inkrement** erstellt eine Datei mit Ihren neuen Änderungen.
@@ -713,11 +810,25 @@ Die Datei kann enthalten:
 - manuell hinzugefügte Bauteile,
 - gespeicherte Ablehnungen.
 
+Ist **MCAD-Namen beim Export ins File schreiben** aktiv, gilt das auch für das Inkrement. Löschmeldungen
+verwenden dabei weiterhin den ECAD-Originalnamen (siehe Abschnitt 13).
+
 Wenn keine neue Änderung vorhanden ist, erscheint:
 
 ```text
 Keine neuen Änderungen!
 ```
+
+Ein Inkrement verweist auf die Instanzen der Baseline. Die Instanz-IDs werden hier deshalb **nie**
+eigenständig neu nummeriert. Haben Sie in derselben Sitzung eine Baseline mit eingeschalteter Option
+**IDs neu nummerieren** exportiert, kennt das Zielsystem nur noch die neuen IDs. Das Inkrement
+übernimmt dann automatisch dieselbe Nummerierung – auch dann, wenn die Option inzwischen wieder
+ausgeschaltet wurde. Sie erhalten in diesem Fall einen Hinweis. Ohne solchen Export bleiben die
+Original-IDs erhalten.
+
+Wurde die Reihenfolge im Modellbaum nach dem letzten Export geändert, behält das Inkrement die
+Original-IDs und meldet das. Exportieren Sie dann die Baseline erneut, damit Baseline und Inkrement
+zusammenpassen. Empfohlene Reihenfolge ist daher: erst **Export**, dann **Inkrement**.
 
 ![Unterschied zwischen Inkrement und vollständigem Export](screenshots/annotated_14_export.jpg)
 
@@ -915,6 +1026,50 @@ Die vollständige Befehlsliste steht in der ausführlichen [Benutzerdokumentatio
 
 ## 19. Häufige Probleme
 
+### Die Datei wird beim Laden abgelehnt
+
+Es erscheint ein Fenster mit dem Hinweis **Es wurde nichts importiert**.
+
+- Die aufgeführten Fehlermeldungen einzeln abarbeiten.
+- Prüfen, ob es sich wirklich um eine IDX-Datei handelt und nicht um eine Fehlerseite oder eine umbenannte Datei.
+- Bei **Das XML ist nicht wohlgeformt** ist die Datei beschädigt oder unvollständig übertragen worden; bitte neu anfordern.
+- Bei **Nicht auflösbare IDX-Referenzen** in einem Inkrement zuerst die passende Baseline laden, da die Verweise auf sie zeigen.
+- Bei fehlendem `IDX_MODE` oder `IDX_VERSION` den Ersteller der Datei kontaktieren.
+
+Der bisherige Arbeitsstand bleibt in allen Fällen erhalten.
+
+### Die Datei wird abgelehnt, weil `IDX_MODE` oder `IDX_VERSION` fehlt
+
+Die Meldung lautet **Im Header fehlt die Eigenschaft IDX_MODE.** beziehungsweise entsprechend für
+`IDX_VERSION`.
+
+- Beide Angaben gehören in den `Header` der IDX-Datei und werden von regulären ECAD- und
+  MCAD-Exporten mitgeschrieben.
+- Fehlen sie, wurde die Datei meist nachträglich von Hand bearbeitet oder stammt aus einem
+  Teilexport. Bitte den Ersteller um einen vollständigen Neuexport.
+- Ein Auszug aus einer IDX-Datei (etwa nur der Änderungsteil) ist keine gültige Eingabedatei.
+
+Der Viewer übernimmt in diesem Fall nichts; Modell und Zeitstrahl bleiben unverändert.
+
+### Die Reihenfolge in Creo stimmt nicht
+
+Creo sortiert die Baugruppenkomponenten nach der Instanznummer, nicht nach der Reihenfolge der
+Einträge in der Datei.
+
+- Schalten Sie vor dem Export die Option **IDs neu nummerieren (Reihenfolge für Creo)** ein.
+- Sortieren Sie den Modellbaum vollständig, **bevor** Sie exportieren.
+- Exportieren Sie in der Reihenfolge: erst **Export** (Baseline), danach **Inkrement**.
+- Geben Sie die neu exportierte Baseline weiter, nicht die ursprüngliche Datei.
+
+### Das Inkrement passt nach der Neunummerierung nicht zur Baseline
+
+- Prüfen Sie, ob die Baseline nach der letzten Änderung der Reihenfolge noch einmal exportiert wurde.
+  Wurde der Modellbaum danach umsortiert, behält das Inkrement die Original-IDs und meldet das.
+- Exportieren Sie in diesem Fall zuerst die Baseline erneut und danach das Inkrement.
+- Geben Sie Baseline und Inkrement immer als Paar aus derselben Sitzung weiter.
+- Wurde die Baseline beim Partner ohne Neunummerierung eingelesen, schalten Sie die Option aus und
+  exportieren Sie beide Dateien erneut.
+
 ### Die Seite ist leer
 
 - Internetverbindung prüfen.
@@ -1004,10 +1159,66 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 ### Export
 
 - [ ] Richtige Exportart gewählt
+- [ ] Modellbaum vor dem Export vollständig sortiert
+- [ ] Option **IDs neu nummerieren (Reihenfolge für Creo)** bewusst gesetzt
+- [ ] Option **MCAD-Namen beim Export ins File schreiben** bewusst gesetzt
+- [ ] Bei Neunummerierung: erst **Export**, dann **Inkrement**
 - [ ] Datei erfolgreich heruntergeladen
 - [ ] Dateiname und Dateigröße geprüft
 - [ ] Ergebnis im vorgesehenen Zielsystem getestet
 - [ ] Ausgangsdateien und Export gemeinsam archiviert
+
+---
+
+## 21. Änderungen / Versionshinweise
+
+### 24.09.2026
+
+**Reihenfolge im Modellbaum**
+
+- Die im Modellbaum eingestellte Reihenfolge (Drag-and-drop, **Ganz nach oben**, **Ganz nach unten**)
+  wird jetzt dauerhaft gespeichert. Sie bleibt beim Neuaufbau des Baums erhalten – etwa beim Wechsel
+  im Zeitstrahl, beim Löschen und Wiederherstellen von Bauteilen oder nach dem Neuladen der Seite.
+- Beide Exporte übernehmen diese Reihenfolge. Zuvor wurde sie im Inkrementexport gar nicht
+  ausgewertet.
+- Beim Sortieren gehen keine Instanzen mehr verloren, die gerade nicht im Modellbaum stehen.
+- Siehe Abschnitt 7.4.
+
+**Neue Option: IDs neu nummerieren (Reihenfolge für Creo)**
+
+- Kontrollkästchen in der Kopfzeile neben den Export-Schaltflächen, im Auslieferungszustand
+  ausgeschaltet.
+- Eingeschaltet vergibt der Export fortlaufende Instanznummern gemäß Modellbaum, damit Creo die
+  Komponenten in der gewünschten Reihenfolge anzeigt.
+- Das Inkrement nummeriert nie eigenständig um, sondern übernimmt die Nummerierung des letzten
+  Baseline-Exports derselben Sitzung.
+- Siehe Abschnitte 15.1 und 15.2.
+
+**Neue Option: MCAD-Namen beim Export ins File schreiben**
+
+- Kontrollkästchen unter **MCAD Namen verwenden**, nur auswählbar, solange diese Option aktiv ist.
+- Eingeschaltet werden die über die Hintmap zugeordneten Namen und Materialnummern in die
+  exportierte Datei geschrieben, nicht nur angezeigt.
+- Löschmeldungen behalten weiterhin den ECAD-Originalnamen.
+- Siehe Abschnitt 13.
+
+**Prüfung vor dem Laden**
+
+- IDX-Dateien werden geprüft, bevor sie übernommen werden. Bei einem Fehler bleibt der bisherige
+  Arbeitsstand unverändert.
+- Siehe Abschnitt 5.
+
+**Inkremente werden angehängt**
+
+- Zusätzlich geladene Inkremente ergänzen den Zeitstrahl, statt ihn zu ersetzen.
+- Eine bereits geladene Datei wird nicht erneut übernommen.
+- Siehe Abschnitt 9.1.
+
+**Korrekturen**
+
+- Gelöschte Bauteile erzeugen keine Aussparungen mehr in der Leiterplatte.
+- Das Laden einer neuen Baseline setzt Baumreihenfolge, manuelle Änderungen und eine zuvor vergebene
+  Nummerierung zuverlässig zurück.
 
 ---
 
