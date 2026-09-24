@@ -177,7 +177,7 @@
     <!-- RECHTES PANEL: Funktionen & Einstellungen -->
     
     <div id="right-panel" class="ui-panel">
-        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px;">
             <div style="display:flex; gap:5px;">
                 <button id="iso-btn" class="action-btn" title="ISO Ansicht">📐 ISO</button>
                 <button id="fullscreen-btn" class="action-btn" title="Vollbildmodus">⛶ Vollbild</button>
@@ -187,6 +187,9 @@
                 <button id="export-inc-btn" class="action-btn" style="background:#e67e22; color:white;" title="Erstellt eine _increment.idx">💾 Inkrement</button>
                 <button id="export-btn" class="action-btn" style="background:#27ae60; color:white;" title="Erstellt eine _filtered.idx">💾 Export</button>
             </div>
+            <label id="renumber-label" style="flex-basis:100%; display:flex; align-items:center; gap:5px; font-size:11px; color:#d2dae2; cursor:pointer;" title="Vergibt die ItemInstance-IDs beim Export fortlaufend nach der Reihenfolge im Modellbaum (z. B. ITEM_INST_1, ITEM_INST_2, ...). Creo sortiert Baugruppenkomponenten nach dieser Nummer. ACHTUNG: ECAD-Inkremente referenzieren die Original-IDs - nach dem Umnummerieren passen sie nur noch zur neu exportierten Baseline. Im Zweifel ausgeschaltet lassen.">
+                <input type="checkbox" id="renumber-ids-toggle"> IDs neu nummerieren (Reihenfolge für Creo)
+            </label>
         </div>
     <div id="upload-section">
             <div class="accordion-header" onclick="toggleAccordion(this)">
@@ -210,6 +213,9 @@
                 <input type="file" id="hintmap-input" accept=".map,.txt" style="width: 100%; margin-bottom: 4px;">
                 <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #d2dae2;">
                     <input type="checkbox" id="mcad-toggle"> MCAD Namen verwenden
+                </label>
+                <label id="mcad-export-label" style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #808e9b; margin-top: 4px;" title="Schreibt die gemappten MCAD-Namen beim Export in die Datei: den Instanznamen der ItemInstance und die Materialnummer (Identifier/Number) des zugehoerigen Item. Nur die Exportkopie wird geaendert. ACHTUNG: Namen sind im IDX auch Zuordnungsmerkmal (z. B. DeletedInstanceName). Loeschmeldungen behalten deshalb immer den ECAD-Originalnamen. Nur einschalten, wenn das Zielsystem die MCAD-Namen erwartet.">
+                    <input type="checkbox" id="mcad-export-toggle" disabled> MCAD-Namen beim Export ins File schreiben
                 </label>
             </div>
 
@@ -432,7 +438,7 @@
 
         function validateIDXText(xmlText, { kind, fileName, baselineDocument = null, referenceDocuments = [] }) {
             const result = { valid: false, fileName, kind, errors: [], warnings: [], document: null, metadata: {} };
-            if (!/\.idx$/i.test(fileName || "")) result.errors.push("Die Datei besitzt nicht die Endung .idx.");
+            if (!/\.(idx|xml)$/i.test(fileName || "")) result.errors.push("Die Datei besitzt weder die Endung .idx noch .xml.");
             if (!xmlText || !xmlText.trim()) {
                 result.errors.push("Die Datei ist leer.");
                 return result;
@@ -535,6 +541,7 @@
             result.valid = result.errors.length === 0;
             return result;
         }
+        window.validateIDXText = validateIDXText;
 
         function showIDXValidationReport(title, results) {
             document.getElementById("idx-validation-modal")?.remove();
@@ -597,6 +604,20 @@
             document.body.appendChild(overlay);
         }
 
+        // Setzt den sitzungsbezogenen Arbeitsstand zurück. Ohne das würden Baumreihenfolge, manuelle
+        // Komponenten und die Abbildung des letzten Baseline-Exports aus einer vorher geladenen Datei
+        // auf die neue Baseline angewendet werden.
+        function resetManualSessionState() {
+            window.manualTreeOrder = [];
+            window.manualStateOrder = [];
+            window.manualStateAdds = [];
+            window.manualStateMods = [];
+            window.manualStateResponses = {};
+            window.lastBaselineRenumber = null;
+            window.activeManualChangeUid = null;
+            manualCount = 0;
+        }
+
         // --- 3. INPUT HANDLERS ---
         document.getElementById('file-input').addEventListener('change', async e => {
             const file = e.target.files[0]; if (!file) return;
@@ -610,11 +631,17 @@
 
             const previousState = {
                 originalXmlDoc, originalFileName, incrementHistory, currentHistoryStep,
+                manualTreeOrder: window.manualTreeOrder, manualStateOrder: window.manualStateOrder,
+                manualStateAdds: window.manualStateAdds, manualStateMods: window.manualStateMods,
+                manualStateResponses: window.manualStateResponses,
+                lastBaselineRenumber: window.lastBaselineRenumber, manualCount,
                 baselineComponents: JSON.parse(JSON.stringify(baselineComponents)),
                 allComponents: JSON.parse(JSON.stringify(allComponents))
             };
             document.getElementById('loading').style.display = 'block';
+            await new Promise(resolve => setTimeout(resolve, 50)); // Ladeanzeige zeichnen lassen
             try {
+                resetManualSessionState();
                 processIDX(xml, validation.document);
                 originalXmlDoc = validation.document;
                 originalFileName = file.name;
@@ -630,6 +657,13 @@
                 originalFileName = previousState.originalFileName;
                 incrementHistory = previousState.incrementHistory;
                 currentHistoryStep = previousState.currentHistoryStep;
+                window.manualTreeOrder = previousState.manualTreeOrder;
+                window.manualStateOrder = previousState.manualStateOrder;
+                window.manualStateAdds = previousState.manualStateAdds;
+                window.manualStateMods = previousState.manualStateMods;
+                window.manualStateResponses = previousState.manualStateResponses;
+                window.lastBaselineRenumber = previousState.lastBaselineRenumber;
+                manualCount = previousState.manualCount;
                 baselineComponents = previousState.baselineComponents;
                 allComponents = previousState.allComponents;
                 window.allComponents = allComponents;
@@ -664,6 +698,22 @@
                 return;
             }
 
+            // Increments werden angehängt. Ein bereits geladenes Increment darf nicht erneut in den
+            // Zeitstrahl geraten: die Änderungen würden doppelt gezählt, der Audit-Trail im
+            // Baseline-Export doppelt geschrieben, und processIncrementStep ordnet Änderungen über
+            // den XML-Inhalt zu, träfe also den falschen Eintrag.
+            const knownXml = new Set(incrementHistory.map(entry => entry.xml));
+            const duplicates = preparedFiles.filter(entry => knownXml.has(entry.xml)).map(entry => entry.file.name);
+            const newFiles = preparedFiles.filter(entry => {
+                if (knownXml.has(entry.xml)) return false;
+                knownXml.add(entry.xml);
+                return true;
+            });
+            if (duplicates.length > 0) {
+                alert(`Bereits geladen und daher übersprungen:\n${duplicates.join("\n")}`);
+            }
+            if (newFiles.length === 0) { e.target.value = ''; return; }
+
             const hasManualChanges = allComponents.some(c =>
                 c.isModified || c.isManuallyAdded || c.manualDeletedState !== undefined
             );
@@ -677,7 +727,7 @@
             };
             document.getElementById('loading').style.display = 'block';
             try {
-                const newHistoryEntries = preparedFiles.map(entry => ({
+                const newHistoryEntries = newFiles.map(entry => ({
                     name: entry.file.name,
                     xml: entry.xml,
                     document: entry.validation.document,
@@ -697,7 +747,7 @@
 
                 updateHistoryUI();
                 await applyHistoryStep(currentHistoryStep);
-                preparedFiles.forEach(entry => entry.validation.warnings.forEach(message =>
+                newFiles.forEach(entry => entry.validation.warnings.forEach(message =>
                     console.warn(`[IDX-Prüfung: ${entry.file.name}] ${message}`)
                 ));
             } catch (error) {
@@ -710,7 +760,7 @@
                 document.getElementById('loading').style.display = 'none';
                 showIDXValidationReport("IDX-Increments konnten nicht importiert werden", [{
                     valid: false,
-                    fileName: preparedFiles.map(entry => entry.file.name).join(", "),
+                    fileName: newFiles.map(entry => entry.file.name).join(", "),
                     errors: [`Interner Importfehler: ${error.message}`],
                     warnings: []
                 }]);
@@ -845,7 +895,57 @@
         window.saveManualState = () => {
             window.manualStateAdds = allComponents.filter(c => c.isManuallyAdded).map(c => JSON.parse(JSON.stringify(c)));
             window.manualStateMods = allComponents.filter(c => c.isModified && !c.isManuallyAdded).map(c => ({uid: c.uid, x: c.x, y: c.y, z: c.z, manualDeletedState: c.manualDeletedState}));
+            window.manualStateOrder = Array.isArray(window.manualTreeOrder) ? window.manualTreeOrder.slice() : [];
+            window.manualStateRenumber = isRenumberEnabled();
+            window.manualStateMcadExport = isMcadExportEnabled();
         };
+
+        // --- Option "IDs neu nummerieren" (Standard: aus) ---
+        const RENUMBER_STORAGE_KEY = 'idxViewer.renumberIds';
+        function isRenumberEnabled() { return !!document.getElementById('renumber-ids-toggle')?.checked; }
+        window.isRenumberEnabled = isRenumberEnabled;
+        (() => {
+            const cb = document.getElementById('renumber-ids-toggle');
+            if (!cb) return;
+            let stored = null;
+            try { stored = localStorage.getItem(RENUMBER_STORAGE_KEY); } catch (e) {}
+            cb.checked = (stored === null) ? false : (stored === 'true');
+            cb.addEventListener('change', () => {
+                try { localStorage.setItem(RENUMBER_STORAGE_KEY, String(cb.checked)); } catch (e) {}
+                if (window.saveManualState) window.saveManualState();
+            });
+        })();
+
+        // Persistiert die aktuelle Baumreihenfolge (DOM) als Modellzustand (sortIndex je Komponente).
+        function captureTreeOrder() {
+            const order = Array.from(document.querySelectorAll('#components-list .tree-item')).map(el => el.dataset.uid);
+            if (order.length === 0) return;
+            window.manualTreeOrder = order;
+            const idx = new Map(order.map((uid, i) => [uid, i]));
+            allComponents.forEach(c => { if (idx.has(c.uid)) c.sortIndex = idx.get(c.uid); });
+            if (window.saveManualState) window.saveManualState();
+        }
+        window.captureTreeOrder = captureTreeOrder;
+
+        // Überträgt die persistierte Reihenfolge nach einem Neuaufbau zurück auf die Komponenten.
+        function applyTreeOrder(components) {
+            const order = window.manualTreeOrder || window.manualStateOrder;
+            if (!Array.isArray(order) || order.length === 0) return;
+            window.manualTreeOrder = order;
+            const idx = new Map(order.map((uid, i) => [uid, i]));
+            components.forEach(c => { if (idx.has(c.uid)) c.sortIndex = idx.get(c.uid); else delete c.sortIndex; });
+        }
+
+        const treeOrderKey = c => (typeof c.sortIndex === 'number' ? c.sortIndex : Number.MAX_SAFE_INTEGER);
+
+        // Export-Reihenfolge: persistierter sortIndex hat Vorrang, DOM-Reihenfolge nur als Fallback.
+        function collectExportUids() {
+            const els = Array.from(document.querySelectorAll('#components-list .tree-item')).filter(it => !it.querySelector('.delete-toggle')?.classList.contains('deleted'));
+            return els.map((it, i) => {
+                const comp = allComponents.find(c => c.uid === it.dataset.uid);
+                return { uid: it.dataset.uid, o: comp ? treeOrderKey(comp) : Number.MAX_SAFE_INTEGER, i };
+            }).sort((a, b) => (a.o - b.o) || (a.i - b.i)).map(e => e.uid);
+        }
 
         
         window.toggleManualChangeSelection = (uid) => {
@@ -920,6 +1020,8 @@
                     });
                 }
             }
+
+            applyTreeOrder(allComponents);
 
             build3DScene(allComponents, window.lastBoardThickness || 1.6);
             document.getElementById('loading').style.display = 'none';
@@ -1120,11 +1222,80 @@
         document.getElementById('obj-toggle').addEventListener('change', e => { showDetailed = e.target.checked; toggleModelType(); });
         document.getElementById('mcad-toggle').addEventListener('change', e => { 
             useMCADNames = e.target.checked; 
+            syncMcadExportToggle();
             if (allComponents.length > 0) {
                 build3DScene(allComponents, 1.6); 
                 document.getElementById('search-input').dispatchEvent(new Event('input'));
             }
         });
+        // --- Option "MCAD-Namen beim Export ins File schreiben" (Standard: aus) ---
+        // Nur nutzbar, wenn "MCAD Namen verwenden" aktiv ist: ohne aktive Anzeige gäbe es keine
+        // sichtbare Kontrolle darüber, was in die Datei geschrieben wird.
+        const MCAD_EXPORT_STORAGE_KEY = 'idxViewer.mcadNamesInExport';
+        function isMcadExportEnabled() {
+            const cb = document.getElementById('mcad-export-toggle');
+            return !!(cb && cb.checked && !cb.disabled && useMCADNames);
+        }
+        window.isMcadExportEnabled = isMcadExportEnabled;
+        function syncMcadExportToggle() {
+            const cb = document.getElementById('mcad-export-toggle'), lbl = document.getElementById('mcad-export-label');
+            if (!cb) return;
+            cb.disabled = !useMCADNames;
+            if (lbl) { lbl.style.color = cb.disabled ? '#57606f' : '#d2dae2'; lbl.style.cursor = cb.disabled ? 'not-allowed' : 'pointer'; }
+        }
+        (() => {
+            const cb = document.getElementById('mcad-export-toggle');
+            if (!cb) return;
+            let stored = null;
+            try { stored = localStorage.getItem(MCAD_EXPORT_STORAGE_KEY); } catch (e) {}
+            cb.checked = (stored === 'true');
+            cb.addEventListener('change', () => {
+                try { localStorage.setItem(MCAD_EXPORT_STORAGE_KEY, String(cb.checked)); } catch (e) {}
+                if (window.saveManualState) window.saveManualState();
+            });
+            syncMcadExportToggle();
+        })();
+
+        // Schreibt die gemappten MCAD-Namen in die Exportkopie - dorthin, wo der Parser die Werte liest:
+        // comp.name stammt aus dem Name-Element der ItemInstance (sonst InstanceName/ObjectName),
+        // comp.partNumber aus Identifier/Number des referenzierten Item.
+        function applyMcadNames(doc, uids, instMap) {
+            if (!isMcadExportEnabled()) return 0;
+            const itemsById = new Map();
+            Array.from(doc.getElementsByTagNameNS("*", "Item")).forEach(el => { const id = el.getAttribute("id"); if (id) itemsById.set(id, el); });
+            const itemTargets = new Map(), conflicted = new Set();
+            let renamed = 0;
+            uids.forEach(id => {
+                const comp = allComponents.find(c => c.uid === id), inst = instMap[id];
+                if (!comp || !inst) return;
+                const mappedName = hintMap[comp.name], mappedPart = hintMap[comp.partNumber];
+                if (mappedName) {
+                    const nameNode = getNS(inst, "Name")[0];
+                    if (nameNode) { nameNode.textContent = mappedName; renamed++; }
+                    else {
+                        const grp = getNS(inst, "InstanceName")[0], objNode = grp ? getNS(grp, "ObjectName")[0] : null;
+                        if (objNode) { objNode.textContent = mappedName; renamed++; }
+                    }
+                }
+                if (mappedPart) {
+                    const ref = getNS(inst, "Item")[0]?.textContent, itemEl = ref ? itemsById.get(ref) : null;
+                    if (itemEl) {
+                        // Ein Item kann von mehreren Instanzen geteilt werden. Es wird genau einmal
+                        // umbenannt; widersprüchliche Zuordnungen bleiben unverändert (Original).
+                        if (itemTargets.has(itemEl) && itemTargets.get(itemEl) !== mappedPart) conflicted.add(itemEl);
+                        else itemTargets.set(itemEl, mappedPart);
+                    }
+                }
+            });
+            itemTargets.forEach((value, itemEl) => {
+                if (conflicted.has(itemEl)) { console.warn("MCAD-Export: uneinheitliches Mapping für Item", itemEl.getAttribute("id"), "- Originalname beibehalten."); return; }
+                const numNode = getNS(getNS(itemEl, "Identifier")[0] || itemEl, "Number")[0];
+                if (numNode) { numNode.textContent = value; renamed++; }
+            });
+            console.log("MCAD-Namen in Exportkopie geschrieben:", renamed);
+            return renamed;
+        }
+
         document.getElementById('obj-input').addEventListener('change', async e => { loadedOBJFiles = Array.from(e.target.files); await processOBJFiles(loadedOBJFiles, false); });
 
         async function processOBJFiles(allSelectedFiles, silent) {
@@ -1356,6 +1527,10 @@
                 }
             });
 
+            // Persistierte Baumreihenfolge anwenden (stabile Sortierung, unbekannte ans Ende).
+            features.sort((a, b) => treeOrderKey(a.comp) - treeOrderKey(b.comp));
+            parts.sort((a, b) => treeOrderKey(a.comp) - treeOrderKey(b.comp));
+
             if (boardComp) {
                 const w = document.createElement('div'); w.className = 'board-wrapper'; uiList.appendChild(w); addTreeItem(boardComp, boardMesh, w, true);
                 const c = document.createElement('div'); c.className = 'board-children'; c.style.paddingLeft = '15px'; c.style.display = 'none'; w.appendChild(c); features.forEach(f => addTreeItem(f.comp, f.mesh, c));
@@ -1413,7 +1588,7 @@
                 const getM = el => el.closest('.board-wrapper') || el, target = getM(this), items = [...new Set(selectedComponents.has(dragSrcEl.dataset.uid) ? Array.from(document.querySelectorAll('.tree-item')).filter(el => selectedComponents.has(el.dataset.uid) && el.parentElement === this.parentElement).map(getM) : [getM(dragSrcEl)])];
                 const all = Array.from(this.parentElement.children); if (all.indexOf(getM(dragSrcEl)) < all.indexOf(target)) items.reverse().forEach(it => target.after(it)); else items.forEach(it => target.before(it));
             }
-            this.classList.remove('over'); return false;
+            this.classList.remove('over'); captureTreeOrder(); return false;
         }
 
         function addTreeItem(comp, meshT, container, isP = false) {
@@ -1532,6 +1707,7 @@ function handleSelection(id, ctrl, shift) {
                 if (direction === 'top') { let iB = container.firstChild; if (container.id === 'components-list') { const fB = container.querySelector('.board-wrapper'); if (fB && fB.parentElement === container) iB = fB.nextSibling; } selItems.forEach(it => container.insertBefore(it, iB)); }
                 else if (direction === 'bottom') { selItems.forEach(it => container.appendChild(it)); }
             });
+            captureTreeOrder();
         }
         document.getElementById('move-top-btn').addEventListener('click', () => moveSelectedItems('top'));
         document.getElementById('move-bottom-btn').addEventListener('click', () => moveSelectedItems('bottom'));
@@ -1573,9 +1749,94 @@ function handleSelection(id, ctrl, shift) {
             });
         }
 
+        // IDX-Struktur: ItemInstances hängen unter ihrem Item-Knoten. Eine quer über mehrere Items
+        // gemischte Baumreihenfolge ist daher nicht 1:1 abbildbar. Innerhalb eines Items wird exakt
+        // nach der Baumreihenfolge sortiert; die Item-Knoten selbst werden im Elternknoten nach dem
+        // ersten Vorkommen ihrer Instanzen im Baum angeordnet (bestmögliche Annäherung).
+        function reorderInstancesByUids(doc, uids, instMap) {
+            const parents = [], itemToUids = new Map();
+            uids.forEach(id => {
+                const inst = instMap[id]; if (!inst || !inst.parentElement) return;
+                const item = inst.parentElement;
+                if (item.localName && item.localName.toLowerCase() === "item") {
+                    if (!itemToUids.has(item)) { itemToUids.set(item, []); parents.push(item); }
+                    itemToUids.get(item).push(id);
+                }
+            });
+            if (parents.length === 0) return;
+            itemToUids.forEach((ids, item) => {
+                const insts = Array.from(item.childNodes).filter(n => n.nodeType === 1 && n.localName === "ItemInstance");
+                if (insts.length === 0) return;
+                const ordered = ids.map(id => instMap[id]).filter(i => i && i.parentElement === item);
+                const orderedSet = new Set(ordered);
+                // Instanzen, die nicht im Baum sind (gefiltert/ausgeblendet), bleiben erhalten.
+                const rest = insts.filter(i => !orderedSet.has(i));
+                const ph = doc.createTextNode(""); item.insertBefore(ph, insts[0]);
+                insts.forEach(i => item.removeChild(i));
+                ordered.forEach(i => item.insertBefore(i, ph));
+                rest.forEach(i => item.insertBefore(i, ph));
+                item.removeChild(ph);
+            });
+            const gp = parents[0].parentElement;
+            if (gp) {
+                const moved = parents.filter(i => i.parentElement === gp);
+                const ph = doc.createTextNode(""); gp.insertBefore(ph, moved[0] || null);
+                moved.forEach(i => gp.removeChild(i));
+                moved.forEach(i => gp.insertBefore(i, ph));
+                gp.removeChild(ph);
+            }
+        }
+
+        // Ersetzt IDs (id-Attribut + reine Text-Referenzen) gemäß Map. IDs sind im XML eindeutig,
+        // daher kann strikt über Gleichheit ersetzt werden.
+        function applyIdMap(doc, map) {
+            if (!map || map.size === 0) return;
+            const all = doc.getElementsByTagName("*");
+            for (let i = 0; i < all.length; i++) {
+                const el = all[i];
+                const id = el.getAttribute("id");
+                if (id && map.has(id)) el.setAttribute("id", map.get(id));
+                if (el.children.length === 0) {
+                    const raw = el.textContent;
+                    if (raw) { const k = raw.trim(); if (map.has(k)) el.textContent = raw.replace(k, map.get(k)); }
+                }
+            }
+        }
+
+        // Creo sortiert Baugruppenkomponenten nach der Nummer in der ItemInstance-ID (z. B. ITEM_INST_12),
+        // nicht nach der XML-Reihenfolge. Daher wird beim Export fortlaufend nach Baumreihenfolge neu
+        // nummeriert. Präfix/Nullpadding werden aus den Original-IDs abgeleitet, manuelle MANUAL_*-
+        // Komponenten werden in dasselbe Schema eingereiht. Nur die Export-Kopie wird verändert.
+        function renumberInstanceIds(doc, orderedUids) {
+            const insts = Array.from(doc.getElementsByTagNameNS("*", "ItemInstance"));
+            if (insts.length === 0) return new Map();
+            const pat = /^(.*?)(\d+)$/, counts = new Map(); let pad = 0;
+            insts.forEach(i => {
+                const m = pat.exec(i.getAttribute("id") || "");
+                if (m && !/^MANUAL_/.test(m[1])) { counts.set(m[1], (counts.get(m[1]) || 0) + 1); if (/^0\d/.test(m[2])) pad = Math.max(pad, m[2].length); }
+            });
+            let prefix = "ITEM_INST_", best = 0;
+            counts.forEach((c, p) => { if (c > best) { best = c; prefix = p; } });
+            const fmt = n => prefix + (pad > 0 ? String(n).padStart(pad, "0") : String(n));
+            const byId = new Map(); insts.forEach(i => byId.set(i.getAttribute("id"), i));
+            const ordered = (orderedUids || []).filter(u => byId.has(u));
+            const seen = new Set(ordered);
+            // Instanzen ausserhalb des Baums (gefiltert/ausgeblendet) hängen hinten an, damit keine Nummer doppelt vergeben wird.
+            insts.forEach(i => { const id = i.getAttribute("id"); if (!seen.has(id)) { ordered.push(id); seen.add(id); } });
+            const map = new Map();
+            ordered.forEach((old, idx) => { const nw = fmt(idx + 1); if (nw !== old) map.set(old, nw); });
+            if (map.size === 0) return map;
+            // Zweistufig über temporäre IDs, damit Zielnummern nicht mit noch bestehenden IDs kollidieren.
+            const tmpMap = new Map(), backMap = new Map(); let k = 0;
+            map.forEach((nw, old) => { const t = `__RENUM_TMP_${k++}__`; tmpMap.set(old, t); backMap.set(t, nw); });
+            applyIdMap(doc, tmpMap);
+            applyIdMap(doc, backMap);
+            return map;
+        }
+
         document.getElementById('export-btn').addEventListener('click', () => {
             if (!originalXmlDoc) return;
-            const uids = Array.from(document.querySelectorAll('.tree-item')).filter(it => !it.querySelector('.delete-toggle').classList.contains('deleted')).map(it => it.dataset.uid);
+            const uids = collectExportUids();
             const copy = originalXmlDoc.cloneNode(true), instMap = {}; Array.from(copy.getElementsByTagNameNS("*", "ItemInstance")).forEach(i => instMap[i.getAttribute("id")] = i);
             uids.forEach(id => {
                 const comp = allComponents.find(c => c.uid === id), inst = instMap[id];
@@ -1619,9 +1880,19 @@ function handleSelection(id, ctrl, shift) {
                     instNode.appendChild(transN); const sideN = copy.createElementNS(pdmNs, `${pdmPfx}AssembleToName`); sideN.textContent = comp.isBottom ? "BOTTOM" : "TOP"; instNode.appendChild(sideN); firstAssemblyItem.appendChild(instNode); instMap[id] = instNode;
                 });
             }
-            const parents = []; const itemToUids = new Map(); uids.forEach(id => { const inst = instMap[id]; if (inst) { const item = inst.closest('Item') || inst.parentElement; if (item && item.localName.toLowerCase() === "item") { if (!itemToUids.has(item)) { itemToUids.set(item, []); parents.push(item); } itemToUids.get(item).push(id); } } });
-            if (parents.length > 0) { itemToUids.forEach((ids, item) => { if (ids.length > 1) { const insts = Array.from(item.childNodes).filter(n => n.nodeType === 1 && n.localName === "ItemInstance"); if (insts.length > 0) { const ph = copy.createTextNode(""); item.insertBefore(ph, insts[0]); const s = ids.map(id => instMap[id]).filter(i => i !== undefined); insts.forEach(i => item.removeChild(i)); s.forEach(i => item.insertBefore(i, ph)); item.removeChild(ph); } } });
-            const ph = copy.createTextNode(""), gp = parents[0].parentElement; if (gp) { gp.insertBefore(ph, parents[0]); parents.forEach(i => { if (i.parentElement === gp) gp.removeChild(i); }); parents.forEach(i => gp.insertBefore(i, ph)); gp.removeChild(ph); } }
+            reorderInstancesByUids(copy, uids, instMap);
+            applyMcadNames(copy, uids, instMap);
+            // Neunummerierung nur auf ausdrücklichen Wunsch (Checkbox), da ECAD-Inkremente die
+            // Original-IDs referenzieren. Vor dem Anhängen der Historie: der Audit-Trail bleibt als
+            // historischer Beleg unverändert und behält die IDs des jeweiligen Increments.
+            if (isRenumberEnabled()) {
+                const renumberMap = renumberInstanceIds(copy, uids);
+                window.lastBaselineRenumber = { map: renumberMap, order: uids.join("|") };
+                console.log("Baseline-Export: ItemInstance-IDs neu nummeriert:", renumberMap.size);
+            } else {
+                window.lastBaselineRenumber = null;
+                console.log("Baseline-Export: Original-IDs beibehalten (Neunummerierung deaktiviert).");
+            }
             // --- APPEND HISTORY TO BASELINE EXPORT ---
             if (incrementHistory && incrementHistory.length > 0) {
                 const rootNode = copy.documentElement;
@@ -1646,7 +1917,7 @@ function handleSelection(id, ctrl, shift) {
 
         document.getElementById('export-inc-btn').addEventListener('click', () => {
             if (!originalXmlDoc) return;
-            const uids = Array.from(document.querySelectorAll('.tree-item')).filter(it => !it.querySelector('.delete-toggle').classList.contains('deleted')).map(it => it.dataset.uid);
+            const uids = collectExportUids();
             const modifiedComps = allComponents.filter(c => c.isModified && !c.isDeleted);
             const manualComps = allComponents.filter(c => c.isManuallyAdded && !c.isIncrementallyAdded).map(c => c.uid);
             const deletedComps = allComponents.filter(c => c.isDeleted && !c.isIncrementallyDeleted);
@@ -1703,8 +1974,27 @@ function handleSelection(id, ctrl, shift) {
                 sTR("xx", Math.cos(rad).toFixed(4)); sTR("xy", (-Math.sin(rad)).toFixed(4)); sTR("yx", Math.sin(rad).toFixed(4)); sTR("yy", Math.cos(rad).toFixed(4)); sTV("tx", comp.x.toFixed(3)); sTV("ty", comp.y.toFixed(3)); sTV("tz", (comp.z+(window.boardZ||0)).toFixed(3)); iI.appendChild(tN);
                 iI.appendChild(copy.createElementNS(pdmNs, `${pdmPfx}AssembleToName`)).textContent = comp.isBottom ? "BOTTOM" : "TOP"; firstAsm.appendChild(iI); instMap[id] = iI;
             });
-            const parents = []; const iTU = new Map(); uids.forEach(id => { const inst = instMap[id]; if (inst?.parentNode) { const item = inst.closest('Item') || inst.parentElement; if (item?.localName === "item") { if (!iTU.has(item)) { iTU.set(item, []); parents.push(item); } iTU.get(item).push(id); } } });
-            if (parents.length > 0) { iTU.forEach((ids, item) => { if (ids.length > 1) { const insts = Array.from(item.childNodes).filter(n => n.nodeType === 1 && n.localName === "ItemInstance"); if (insts.length > 0) { const ph = copy.createTextNode(""); item.insertBefore(ph, insts[0]); ids.map(id => instMap[id]).filter(i => i).forEach(i => { i.parentNode?.removeChild(i); item.insertBefore(i, ph); }); item.removeChild(ph); } } }); const ph = copy.createTextNode(""), gp = parents[0].parentElement; if (gp) { gp.insertBefore(ph, parents[0]); parents.forEach(i => { if (i.parentElement === gp) gp.removeChild(i); }); parents.forEach(i => gp.insertBefore(i, ph)); gp.removeChild(ph); } }
+            reorderInstancesByUids(copy, uids, instMap);
+            // Umbenennung erst hier: die DeletedInstanceName-Einträge wurden oben aus den
+            // Original-Namen erzeugt und bleiben dadurch bewusst beim ECAD-Namen. Sie identifizieren
+            // ein Objekt im bestehenden Modell des Empfängers und dürfen nicht mit umbenannt werden.
+            applyMcadNames(copy, uids, instMap);
+            // IDX-Protokoll: Ein Increment referenziert Instanzen der Baseline (PredecessorItem,
+            // ChangeId, Instanz-IDs). Es wird deshalb nie eigenständig neu nummeriert. Wurde in dieser
+            // Sitzung eine neu nummerierte Baseline exportiert, kennt das Zielsystem nur noch die neuen
+            // IDs - das Increment muss dann zwingend dieselbe Abbildung verwenden, auch wenn die
+            // Checkbox inzwischen ausgeschaltet wurde. Andernfalls liefen die Referenzen ins Leere.
+            const lastRenum = window.lastBaselineRenumber;
+            if (lastRenum && lastRenum.map && lastRenum.map.size > 0) {
+                if (lastRenum.order === uids.join("|")) {
+                    applyIdMap(copy, lastRenum.map);
+                    console.log("Increment-Export: IDs an zuletzt exportierte Baseline angeglichen:", lastRenum.map.size);
+                    if (!isRenumberEnabled()) alert("Hinweis: Die zuletzt exportierte Baseline wurde neu nummeriert.\nDamit die Referenzen passen, verwendet dieses Inkrement dieselbe Nummerierung, obwohl die Option 'IDs neu nummerieren' ausgeschaltet ist.");
+                } else {
+                    console.warn("Increment-Export: Baumreihenfolge weicht vom letzten Baseline-Export ab - IDs bleiben unverändert.");
+                    alert("Achtung: Die Reihenfolge im Modellbaum wurde nach dem letzten Export geändert.\nDas Inkrement behält die Original-IDs. Exportieren Sie die Baseline erneut, damit Baseline und Inkrement zusammenpassen.");
+                }
+            }
             const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'application/xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = originalFileName.replace(/.(idx|xml)$/i, '_increment.$1'); a.click();
         });
 
@@ -1716,7 +2006,7 @@ function handleSelection(id, ctrl, shift) {
             const compMinX = -2.5, compMaxX = 2.5, compMinY = -2.5, compMaxY = 2.5, compMinZ = 0, compMaxZ = 5;
             m.position.set(x, y, isBottom ? z : bT + z); m.rotation.z = rot * Math.PI / 180; m.userData.uid = uid; m.userData.isVisible = true; simplifiedMeshes[uid] = m; meshes[uid] = m; currentGroup.add(m);
             const comp = { uid, name, partNumber: "Hand", x, y, z: (isBottom ? z : bT + z), thickness: 5, polygons: [], circles: [], isVisible: true, isDeleted: false, isBottom, origX: x, origY: y, origZ: (isBottom ? z : bT + z), minX: compMinX, maxX: compMaxX, minY: compMinY, maxY: compMaxY, minZ: compMinZ, maxZ: compMaxZ, isManuallyAdded: true }; allComponents.push(comp); 
-            await replaceWithOBJ(uid, file, sc); addTreeItem(comp, m, document.getElementById('components-list')); updateView(); updateHistoryUI();
+            await replaceWithOBJ(uid, file, sc); addTreeItem(comp, m, document.getElementById('components-list')); captureTreeOrder(); updateView(); updateHistoryUI();
         });
 
         document.getElementById('apply-edit-btn').addEventListener('click', () => {
@@ -1929,24 +2219,17 @@ function handleSelection(id, ctrl, shift) {
         const helpButton = document.getElementById('help-btn');
         const helpModal = document.getElementById('help-modal');
         const helpCloseButton = document.getElementById('help-close-btn');
-        const helpHash = '#hilfe';
         let helpPreviousFocus = null;
 
-        function openHelp(updateUrl = true) {
+        function openHelp() {
             helpPreviousFocus = document.activeElement;
             helpModal.classList.add('open');
             helpCloseButton.focus();
-            if (updateUrl && window.location.hash.toLowerCase() !== helpHash) {
-                window.history.replaceState(null, '', window.location.pathname + window.location.search + helpHash);
-            }
         }
 
-        function closeHelp(updateUrl = true) {
+        function closeHelp() {
             if (!helpModal.classList.contains('open')) return;
             helpModal.classList.remove('open');
-            if (updateUrl && window.location.hash.toLowerCase() === helpHash) {
-                window.history.replaceState(null, '', window.location.pathname + window.location.search);
-            }
             if (helpPreviousFocus && typeof helpPreviousFocus.focus === 'function') {
                 helpPreviousFocus.focus();
             }
@@ -1960,10 +2243,6 @@ function handleSelection(id, ctrl, shift) {
         window.addEventListener('message', event => {
             if (event.data === 'idx-help-close') closeHelp();
         });
-        window.addEventListener('hashchange', () => {
-            if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
-            else closeHelp(false);
-        });
         window.addEventListener('keydown', event => {
             if (event.key === 'Escape' && helpModal.classList.contains('open')) {
                 event.preventDefault();
@@ -1971,7 +2250,6 @@ function handleSelection(id, ctrl, shift) {
                 closeHelp();
             }
         }, true);
-        if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
 
 </script>
 </body>
