@@ -391,7 +391,7 @@ Einträge in genau dieser Reihenfolge.
 
 > **Hinweis:** Das IDX-Format verlangt, dass jede Instanz unterhalb ihrer Bauteildefinition steht.
 > Eine Reihenfolge, die Instanzen verschiedener Bauteile beliebig mischt, lässt sich im Dateiaufbau
-> deshalb nicht exakt abbilden. Für Creo ist ohnehin die Instanznummer maßgeblich – siehe
+> deshalb nicht exakt abbilden. Für den beobachteten Creo-Import sind die Assembly-Item-IDs maßgeblich – siehe
 > Abschnitt 15.1, Option **IDs neu nummerieren (Reihenfolge für Creo)**.
 
 Beim Laden einer neuen Baseline wird die gespeicherte Reihenfolge zusammen mit den übrigen manuellen
@@ -776,16 +776,20 @@ _filtered.idx
 Verwenden Sie diesen Export, wenn Sie einen möglichst vollständigen aktuellen Stand benötigen.
 
 Oben rechts steht zusätzlich die Option **IDs neu nummerieren (Reihenfolge für Creo)**. Sie ist im
-Auslieferungszustand **ausgeschaltet** und wird für Ihren Browser gespeichert.
+Auslieferungszustand **eingeschaltet** und wird für Ihren Browser gespeichert. Eine zuvor gespeicherte
+Auswahl bleibt erhalten, auch wenn sie ausgeschaltet war.
 
-- **Ausgeschaltet (Standard):** Die Instanz-IDs der Originaldatei bleiben unverändert. Im Export wird
+- **Ausgeschaltet:** Die Instanz-IDs der Originaldatei bleiben unverändert. Im Export wird
   nur die Reihenfolge der Einträge in der Datei angepasst. Wählen Sie diese Einstellung, solange Sie
   mit ECAD-Inkrementen arbeiten, die sich auf die Original-IDs beziehen.
-- **Eingeschaltet:** Die Instanz-IDs (zum Beispiel `ITEM_INST_1`, `ITEM_INST_2`, ...) werden fortlaufend
-  gemäß der Reihenfolge im Modellbaum vergeben. Creo sortiert die Baugruppenkomponenten nach dieser
-  Nummer, nicht nach der Reihenfolge im Dateiinhalt. Nur so erscheint die eingestellte Reihenfolge auch
-  in Creo. Präfix und Schreibweise der Originaldatei bleiben erhalten, manuell hinzugefügte Bauteile
-  werden in dieselbe Nummerierung eingereiht.
+- **Eingeschaltet (Standard):** Die Instanz-IDs (zum Beispiel `ITEM_INST_1`, `ITEM_INST_2`, ...) werden fortlaufend
+  gemäß der Reihenfolge im Modellbaum vergeben. Zusätzlich werden die übergeordneten Assembly-Item-IDs
+  neu vergeben, mit gleich breiten Nummern und führenden Nullen (etwa `ITEM_0001`, `ITEM_0002`).
+  Der untersuchte Creo-Import sortiert diese IDs alphabetisch, nicht numerisch.
+  Das vorherrschende Präfix bleibt erhalten; bei Kollisionen wird die Nummernbreite erhöht.
+  Referenzen werden mit angepasst. Gemeinsam genutzte Assembly-Items erhalten den Rang ihrer ersten
+  Instanz; eine beliebige Mischung über solche Gruppen hinweg ist damit nicht darstellbar.
+  Manuelle Instanzen werden ebenfalls nummeriert, bleiben aber in ihrer gemeinsamen Assembly.
 
 > **Achtung:** ECAD-Inkremente verweisen auf die Original-IDs. Nach dem Umnummerieren passen sie nur
 > noch zu der neu exportierten Baseline. Schalten Sie die Option deshalb nur ein, wenn die Reihenfolge
@@ -1053,13 +1057,23 @@ Der Viewer übernimmt in diesem Fall nichts; Modell und Zeitstrahl bleiben unver
 
 ### Die Reihenfolge in Creo stimmt nicht
 
-Creo sortiert die Baugruppenkomponenten nach der Instanznummer, nicht nach der Reihenfolge der
-Einträge in der Datei.
+Beim untersuchten Creo-Import entspricht die Komponentenreihenfolge der alphabetischen Sortierung
+der übergeordneten Assembly-Item-IDs. Nur Instanznummern oder XML-Einträge zu sortieren reicht nicht.
 
 - Schalten Sie vor dem Export die Option **IDs neu nummerieren (Reihenfolge für Creo)** ein.
 - Sortieren Sie den Modellbaum vollständig, **bevor** Sie exportieren.
 - Exportieren Sie in der Reihenfolge: erst **Export** (Baseline), danach **Inkrement**.
 - Geben Sie die neu exportierte Baseline weiter, nicht die ursprüngliche Datei.
+
+Der Export bringt dabei drei Dinge gleichzeitig in die Baumreihenfolge: die Einträge der Komponenten,
+deren Instanznummern und Assembly-Item-IDs (nur bei eingeschalteter Option) und die Reihenfolge der zugehörigen
+Bauteil-Definitionen in der Datei. Die Bauteil-Definitionen bleiben weiterhin vor der Baugruppe
+stehen, damit die Datei gültig bleibt.
+
+Bleibt die Reihenfolge in Creo danach immer noch unverändert, öffnen Sie die exportierte Datei in
+einem Texteditor und prüfen Sie, ob die Komponenten dort tatsächlich in Ihrer Wunschreihenfolge
+stehen. Ist das der Fall, wertet Creo beim Import ein anderes Kriterium aus (etwa den Bauteilnamen);
+bitte melden Sie das mit der exportierten Datei zurück.
 
 ### Das Inkrement passt nach der Neunummerierung nicht zur Baseline
 
@@ -1172,6 +1186,17 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 
 ## 21. Änderungen / Versionshinweise
 
+### 25.09.2026
+
+- Die Neunummerierung ist standardmäßig eingeschaltet; gespeicherte Benutzereinstellungen bleiben erhalten.
+
+- **IDs neu nummerieren (Reihenfolge für Creo)** nummeriert zusätzlich die Assembly-Item-IDs
+  mit führenden Nullen nach Baumreihenfolge. Dies berücksichtigt die im Creo-Import beobachtete
+  alphabetische Sortierung dieser IDs.
+- Inkremente übernehmen auch diese ID-Abbildung aus dem letzten Baseline-Export, einschließlich
+  `PredecessorItem`-Referenzen. Neue Revisionen behalten ihre eigenen IDs und `NewItem`-Referenzen.
+- Die Originaldatei und die internen IDs im Viewer bleiben unverändert.
+
 ### 24.09.2026
 
 **Reihenfolge im Modellbaum**
@@ -1182,13 +1207,17 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 - Beide Exporte übernehmen diese Reihenfolge. Zuvor wurde sie im Inkrementexport gar nicht
   ausgewertet.
 - Beim Sortieren gehen keine Instanzen mehr verloren, die gerade nicht im Modellbaum stehen.
+- Zusätzlich werden jetzt auch die Bauteil-Definitionen in der exportierten Datei in die
+  Baumreihenfolge gebracht. Bisher wurden nur die Komponenteneinträge selbst sortiert, sodass die
+  Reihenfolge in Creo unter Umständen nicht ankam.
 - Siehe Abschnitt 7.4.
 
 **Neue Option: IDs neu nummerieren (Reihenfolge für Creo)**
 
 - Kontrollkästchen in der Kopfzeile neben den Export-Schaltflächen, im Auslieferungszustand
   ausgeschaltet.
-- Eingeschaltet vergibt der Export fortlaufende Instanznummern gemäß Modellbaum, damit Creo die
+- Eingeschaltet vergibt der Export fortlaufende Instanznummern gemäß Modellbaum. Seit 25.09.2026 werden
+  zusätzlich Assembly-Item-IDs nummeriert, damit der beobachtete Creo-Import die
   Komponenten in der gewünschten Reihenfolge anzeigt.
 - Das Inkrement nummeriert nie eigenständig um, sondern übernimmt die Nummerierung des letzten
   Baseline-Exports derselben Sitzung.

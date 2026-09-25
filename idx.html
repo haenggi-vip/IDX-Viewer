@@ -187,8 +187,8 @@
                 <button id="export-inc-btn" class="action-btn" style="background:#e67e22; color:white;" title="Erstellt eine _increment.idx">💾 Inkrement</button>
                 <button id="export-btn" class="action-btn" style="background:#27ae60; color:white;" title="Erstellt eine _filtered.idx">💾 Export</button>
             </div>
-            <label id="renumber-label" style="flex-basis:100%; display:flex; align-items:center; gap:5px; font-size:11px; color:#d2dae2; cursor:pointer;" title="Vergibt die ItemInstance-IDs beim Export fortlaufend nach der Reihenfolge im Modellbaum (z. B. ITEM_INST_1, ITEM_INST_2, ...). Creo sortiert Baugruppenkomponenten nach dieser Nummer. ACHTUNG: ECAD-Inkremente referenzieren die Original-IDs - nach dem Umnummerieren passen sie nur noch zur neu exportierten Baseline. Im Zweifel ausgeschaltet lassen.">
-                <input type="checkbox" id="renumber-ids-toggle"> IDs neu nummerieren (Reihenfolge für Creo)
+            <label id="renumber-label" style="flex-basis:100%; display:flex; align-items:center; gap:5px; font-size:11px; color:#d2dae2; cursor:pointer;" title="Vergibt Assembly-Item-IDs mit fuehrenden Nullen und ItemInstance-IDs nach der Reihenfolge im Modellbaum. Der beobachtete Creo-Import sortiert nach Assembly-Item-IDs. ACHTUNG: ECAD-Inkremente referenzieren die Original-IDs - nach dem Umnummerieren passen sie nur noch zur neu exportierten Baseline. Im Zweifel ausgeschaltet lassen.">
+                <input type="checkbox" id="renumber-ids-toggle" checked> IDs neu nummerieren (Reihenfolge für Creo)
             </label>
         </div>
     <div id="upload-section">
@@ -900,7 +900,7 @@
             window.manualStateMcadExport = isMcadExportEnabled();
         };
 
-        // --- Option "IDs neu nummerieren" (Standard: aus) ---
+        // --- Option "IDs neu nummerieren" (Standard: an; gespeicherte Auswahl bleibt erhalten) ---
         const RENUMBER_STORAGE_KEY = 'idxViewer.renumberIds';
         function isRenumberEnabled() { return !!document.getElementById('renumber-ids-toggle')?.checked; }
         window.isRenumberEnabled = isRenumberEnabled;
@@ -909,7 +909,7 @@
             if (!cb) return;
             let stored = null;
             try { stored = localStorage.getItem(RENUMBER_STORAGE_KEY); } catch (e) {}
-            cb.checked = (stored === null) ? false : (stored === 'true');
+            cb.checked = (stored === null) ? true : (stored === 'true');
             cb.addEventListener('change', () => {
                 try { localStorage.setItem(RENUMBER_STORAGE_KEY, String(cb.checked)); } catch (e) {}
                 if (window.saveManualState) window.saveManualState();
@@ -1749,6 +1749,33 @@ function handleSelection(id, ctrl, shift) {
             });
         }
 
+        // Definitionen nur an bereits belegten Positionen tauschen; die XML-Struktur bleibt erhalten.
+        function reorderItemDefinitions(doc, uids, instMap) {
+            const itemsById = new Map();
+            Array.from(doc.getElementsByTagNameNS("*", "Item")).forEach(el => {
+                const id = el.getAttribute("id");
+                if (id && getNS(el, "ItemType")[0]?.textContent === "single") itemsById.set(id, el);
+            });
+            if (itemsById.size === 0) return;
+            const target = [], seen = new Set();
+            uids.forEach(uid => {
+                const inst = instMap[uid]; if (!inst) return;
+                const ref = getNS(inst, "Item")[0]?.textContent;
+                const el = ref ? itemsById.get(ref) : null;
+                if (el && !seen.has(el)) { seen.add(el); target.push(el); }
+            });
+            if (target.length < 2) return;
+            // Nur Definitionen mit gemeinsamem Elternknoten umhängen.
+            const parent = target[0].parentNode;
+            const group = target.filter(el => el.parentNode === parent);
+            if (group.length < 2) return;
+            const groupSet = new Set(group);
+            const docOrder = Array.from(parent.childNodes).filter(n => groupSet.has(n));
+            const slots = docOrder.map(el => { const ph = doc.createTextNode(""); parent.insertBefore(ph, el); return ph; });
+            docOrder.forEach(el => parent.removeChild(el));
+            slots.forEach((ph, i) => { parent.insertBefore(group[i], ph); parent.removeChild(ph); });
+        }
+
         // IDX-Struktur: ItemInstances hängen unter ihrem Item-Knoten. Eine quer über mehrere Items
         // gemischte Baumreihenfolge ist daher nicht 1:1 abbildbar. Innerhalb eines Items wird exakt
         // nach der Baumreihenfolge sortiert; die Item-Knoten selbst werden im Elternknoten nach dem
@@ -1803,10 +1830,42 @@ function handleSelection(id, ctrl, shift) {
             }
         }
 
-        // Creo sortiert Baugruppenkomponenten nach der Nummer in der ItemInstance-ID (z. B. ITEM_INST_12),
-        // nicht nach der XML-Reihenfolge. Daher wird beim Export fortlaufend nach Baumreihenfolge neu
-        // nummeriert. Präfix/Nullpadding werden aus den Original-IDs abgeleitet, manuelle MANUAL_*-
-        // Komponenten werden in dasselbe Schema eingereiht. Nur die Export-Kopie wird verändert.
+        // Der beobachtete Creo-Import sortiert die umgebenden Assembly-Item-IDs lexikographisch.
+        // Gemeinsam genutzte Assemblies erhalten den Rang ihrer ersten Instanz.
+        function renumberAssemblyIds(doc, orderedUids) {
+            const assemblies = getNS(doc, "Item").filter(el => el.hasAttribute("id") &&
+                Array.from(el.children).some(n => n.localName === "ItemType" && n.textContent.trim() === "assembly"));
+            if (!assemblies.length) return new Map();
+            const assemblySet = new Set(assemblies), byUid = new Map();
+            getNS(doc, "ItemInstance").forEach(el => byUid.set(el.getAttribute("id"), el));
+            const ordered = [], seen = new Set();
+            const add = el => { if (assemblySet.has(el) && !seen.has(el)) { seen.add(el); ordered.push(el); } };
+            orderedUids.forEach(uid => add(byUid.get(uid)?.parentNode));
+            assemblies.forEach(add);
+            const counts = new Map();
+            assemblies.forEach(el => {
+                const match = /^(.*?)(\d+)$/.exec(el.getAttribute("id"));
+                if (match) counts.set(match[1], (counts.get(match[1]) || 0) + 1);
+            });
+            let prefix = "ITEM_", best = 0;
+            counts.forEach((count, candidate) => { if (count > best) { prefix = candidate; best = count; } });
+            const oldIds = new Set(assemblies.map(el => el.getAttribute("id")));
+            const reserved = new Set(Array.from(doc.querySelectorAll("[id]"))
+                .map(el => el.getAttribute("id")).filter(id => !oldIds.has(id)));
+            let width = Math.max(4, String(ordered.length).length);
+            const format = n => prefix + String(n).padStart(width, "0");
+            while (ordered.some((el, i) => reserved.has(format(i + 1)))) width++;
+            const map = new Map();
+            ordered.forEach((el, i) => {
+                const old = el.getAttribute("id"), next = format(i + 1);
+                if (old !== next) map.set(old, next);
+            });
+            // applyIdMap liest jeden Attribut-/Referenzwert genau einmal (gleichzeitige Abbildung).
+            applyIdMap(doc, map);
+            return map;
+        }
+
+        // Instanznummern folgen ebenfalls der Baumreihenfolge. Nur die Exportkopie wird verändert.
         function renumberInstanceIds(doc, orderedUids) {
             const insts = Array.from(doc.getElementsByTagNameNS("*", "ItemInstance"));
             if (insts.length === 0) return new Map();
@@ -1881,14 +1940,16 @@ function handleSelection(id, ctrl, shift) {
                 });
             }
             reorderInstancesByUids(copy, uids, instMap);
+            reorderItemDefinitions(copy, uids, instMap);
             applyMcadNames(copy, uids, instMap);
             // Neunummerierung nur auf ausdrücklichen Wunsch (Checkbox), da ECAD-Inkremente die
             // Original-IDs referenzieren. Vor dem Anhängen der Historie: der Audit-Trail bleibt als
             // historischer Beleg unverändert und behält die IDs des jeweiligen Increments.
             if (isRenumberEnabled()) {
-                const renumberMap = renumberInstanceIds(copy, uids);
+                const renumberMap = renumberAssemblyIds(copy, uids);
+                renumberInstanceIds(copy, uids).forEach((value, key) => renumberMap.set(key, value));
                 window.lastBaselineRenumber = { map: renumberMap, order: uids.join("|") };
-                console.log("Baseline-Export: ItemInstance-IDs neu nummeriert:", renumberMap.size);
+                console.log("Baseline-Export: Assembly- und ItemInstance-IDs neu nummeriert:", renumberMap.size);
             } else {
                 window.lastBaselineRenumber = null;
                 console.log("Baseline-Export: Original-IDs beibehalten (Neunummerierung deaktiviert).");
@@ -1975,6 +2036,7 @@ function handleSelection(id, ctrl, shift) {
                 iI.appendChild(copy.createElementNS(pdmNs, `${pdmPfx}AssembleToName`)).textContent = comp.isBottom ? "BOTTOM" : "TOP"; firstAsm.appendChild(iI); instMap[id] = iI;
             });
             reorderInstancesByUids(copy, uids, instMap);
+            reorderItemDefinitions(copy, uids, instMap);
             // Umbenennung erst hier: die DeletedInstanceName-Einträge wurden oben aus den
             // Original-Namen erzeugt und bleiben dadurch bewusst beim ECAD-Namen. Sie identifizieren
             // ein Objekt im bestehenden Modell des Empfängers und dürfen nicht mit umbenannt werden.
