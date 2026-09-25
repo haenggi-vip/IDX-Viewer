@@ -57,9 +57,10 @@ function installThreeStub(window) {
 }
 
 /** Laedt idx.html in jsdom und fuehrt den Hauptskriptblock aus. */
-function loadViewer() {
+function loadViewer(renumberPreference = null) {
   const dom = new JSDOM(source, { runScripts: 'outside-only', url: 'https://example.invalid/' });
   const { window } = dom;
+  if (renumberPreference !== null) window.localStorage.setItem('idxViewer.renumberIds', renumberPreference);
   installThreeStub(window);
   window.requestAnimationFrame = () => 0;
   window.cancelAnimationFrame = () => {};
@@ -139,9 +140,9 @@ function buildBaseline() {
 </EDMDDataSet>`;
 }
 
-function setup() {
+function setup(xml = buildBaseline()) {
   const window = loadViewer();
-  const xml = buildBaseline();
+  window.document.getElementById('renumber-ids-toggle').checked = false;
   const validateIDXText = window.__run('validateIDXText');
   const validation = validateIDXText(xml, { kind: 'baseline', fileName: 'smoke.idx' });
   expect(validation.errors).toEqual([]);
@@ -171,6 +172,22 @@ function exportedInstances(xmlText, window) {
   }));
 }
 
+/** Materialnummern der Bauteil-Definitionen in Dokumentreihenfolge. */
+function exportedItemNumbers(xmlText, window) {
+  const doc = new window.DOMParser().parseFromString(xmlText, 'application/xml');
+  return Array.from(doc.getElementsByTagNameNS('*', 'Item'))
+    .filter(el => el.getElementsByTagNameNS('*', 'ItemType')[0]?.textContent === 'single')
+    .map(el => el.getElementsByTagNameNS('*', 'Number')[0]?.textContent);
+}
+
+test('Neunummerierung ist standardmaessig an und respektiert gespeicherte Auswahl', () => {
+  for (const [stored, expected] of [[null, true], ['false', false], ['true', true]]) {
+    const window = loadViewer(stored);
+    expect(window.document.getElementById('renumber-ids-toggle').checked).toBe(expected);
+    window.close();
+  }
+});
+
 test('Baseline laedt, Baum enthaelt alle Instanzen', () => {
   const window = setup();
   expect(treeUids(window)).toEqual(['ITEM_INST_1', 'ITEM_INST_2', 'ITEM_INST_3']);
@@ -190,6 +207,26 @@ test('Umsortierter Baum wird in den Baseline-Export uebernommen', () => {
   expect(insts.map(i => i.name)).toEqual(['R3', 'R1', 'R2']);
   // Ohne Checkbox bleiben die Original-IDs erhalten.
   expect(insts.map(i => i.id)).toEqual(['ITEM_INST_3', 'ITEM_INST_1', 'ITEM_INST_2']);
+});
+
+test('Bauteil-Definitionen folgen der Baumreihenfolge', () => {
+  const window = setup();
+  const list = window.document.getElementById('components-list');
+  const items = Array.from(list.querySelectorAll('.tree-item'));
+  list.insertBefore(items[2], items[0]); // R3 nach vorne
+  window.__run('captureTreeOrder()');
+
+  window.document.getElementById('export-btn').click();
+  const xml = window.__downloads[0].xml;
+
+  expect(exportedInstances(xml, window).map(i => i.name)).toEqual(['R3', 'R1', 'R2']);
+  expect(exportedItemNumbers(xml, window)).toEqual(['PN-C', 'PN-A', 'PN-B']);
+
+  // Die Definitionen muessen weiterhin vor der Assembly stehen.
+  const doc = new window.DOMParser().parseFromString(xml, 'application/xml');
+  const roots = Array.from(doc.documentElement.children).filter(el => el.localName === 'Item');
+  const asmIndex = roots.findIndex(el => el.getElementsByTagNameNS('*', 'ItemType')[0]?.textContent === 'assembly');
+  expect(asmIndex).toBe(roots.length - 1);
 });
 
 test('Baumreihenfolge ueberlebt den Neuaufbau des Baums', async () => {
@@ -268,6 +305,49 @@ test('Increment-Export ohne Aenderungen meldet "Keine neuen Änderungen!"', () =
   window.document.getElementById('export-inc-btn').click();
   expect(window.__alerts.join('\n')).toContain('Keine neuen Änderungen!');
   expect(window.__downloads).toHaveLength(0);
+});
+
+test('Creo-Reihenfolge: Assembly-IDs lexikalisch sortiert, Referenzen und Increment konsistent', () => {
+  const assemblies = Array.from({ length: 12 }, (_, i) =>
+    `<Item id="ITEM_${1000 + i}"><ItemType>assembly</ItemType>
+      ${instance(`ITEM_INST_${i + 1}`, `R${i + 1}`, 'A', i)}
+    </Item>`).join('');
+  const xml = buildBaseline().replace(/<Item id="ITEM_ASM">[\s\S]*?<\/Item>\s*<\/EDMDDataSet>/,
+    `${assemblies}<PredecessorItem>ITEM_1000</PredecessorItem>
+    <CartesianPoint id="ITEM_0001"><X>0</X><Y>0</Y></CartesianPoint></EDMDDataSet>`);
+  const window = setup(xml);
+  const list = window.document.getElementById('components-list');
+  Array.from(list.querySelectorAll('.tree-item')).reverse().forEach(el => list.appendChild(el));
+  window.__run('captureTreeOrder()');
+  const parse = text => new window.DOMParser().parseFromString(text, 'application/xml');
+  const assemblyNodes = doc => Array.from(doc.getElementsByTagNameNS('*', 'Item'))
+    .filter(el => el.getAttribute('id') && el.getElementsByTagNameNS('*', 'ItemType')[0]?.textContent === 'assembly');
+  window.document.getElementById('export-btn').click();
+  expect(assemblyNodes(parse(window.__downloads[0].xml)).map(el => el.id).sort())
+    .toEqual(Array.from({ length: 12 }, (_, i) => `ITEM_${1000 + i}`).sort());
+
+  window.document.getElementById('renumber-ids-toggle').checked = true;
+  window.__run('allComponents.find(c => c.uid === "ITEM_INST_1").isModified = true');
+  window.document.getElementById('export-btn').click();
+  const baseline = parse(window.__downloads[1].xml);
+  const sorted = assemblyNodes(baseline).sort((a, b) => a.id.localeCompare(b.id));
+  expect(sorted.map(el => el.getElementsByTagNameNS('*', 'Name')[0].textContent))
+    .toEqual(Array.from({ length: 12 }, (_, i) => `R${12 - i}`));
+  expect(sorted[0].id).toBe('ITEM_00001'); // ITEM_0001 is reserved by a geometry object.
+  expect(baseline.getElementsByTagNameNS('*', 'PredecessorItem')[0].textContent).toBe('ITEM_00012');
+  const ids = Array.from(baseline.querySelectorAll('[id]')).map(el => el.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(window.__run('originalXmlDoc.getElementsByTagNameNS("*", "PredecessorItem")[0].textContent')).toBe('ITEM_1000');
+  expect(window.allComponents.find(c => c.name === 'R1').uid).toBe('ITEM_INST_1');
+
+  window.document.getElementById('renumber-ids-toggle').checked = false;
+  window.document.getElementById('export-inc-btn').click();
+  const increment = parse(window.__downloads[2].xml);
+  const changed = increment.getElementsByTagNameNS('*', 'ItemInstance')[0];
+  expect(changed.id).toBe('ITEM_INST_12');
+  expect(changed.parentNode.id).toBe(increment.getElementsByTagNameNS('*', 'NewItem')[0].textContent);
+  expect(changed.parentNode.id).not.toBe('ITEM_00012'); // New revision, not the predecessor itself.
+  expect(increment.getElementsByTagNameNS('*', 'PredecessorItem')[0].textContent).toBe('ITEM_00012');
 });
 
 test('Export ohne geladene Baseline erzeugt keine Datei', () => {
