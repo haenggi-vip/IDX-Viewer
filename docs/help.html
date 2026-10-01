@@ -199,7 +199,8 @@
     </nav>
     <main class="help-article"><h1 id="anwenderdokumentation">Anwenderdokumentation</h1>
 <h2 id="advanced-3d-idx-viewer">Advanced 3D IDX Viewer</h2>
-<p><strong>Dokumentstand:</strong> 24. September 2026<br><strong>Anwendung:</strong> <code>idx.html</code></p>
+<p><strong>Dokumentstand:</strong> 1. Oktober 2026
+<strong>Anwendung:</strong> <code>idx.html</code></p>
 <p>Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.</p>
 <p>Technische Details zum IDX-Datenmodell sind bewusst auf ein Minimum reduziert. Im Mittelpunkt stehen die Fragen:</p>
 <ul>
@@ -271,8 +272,8 @@ oder weitere ECAD-Funktionen in Creo erforderliche Lizenz ist davon unabhängig.
 <li>Komponenten per Drag-and-drop oder mit <strong>Ganz nach oben</strong> beziehungsweise <strong>Ganz nach unten</strong> umsortieren.</li>
 <li>Zu entfernende Komponenten mit dem Papierkorb markieren.</li>
 <li>Das Ergebnis im 3D-Modell und unter <strong>Aktuelle manuelle Änderungen</strong> kontrollieren.</li>
-<li>Bei Bedarf <strong>IDs neu nummerieren (Reihenfolge für Creo)</strong> einschalten, damit Creo die Komponenten in der
-eingestellten Reihenfolge anzeigt (siehe Abschnitt 15.1).</li>
+<li>Die Option <strong>IDs neu nummerieren (Reihenfolge für Creo)</strong> kontrollieren (standardmäßig eingeschaltet), damit Creo die
+Komponenten in der im Modellbaum eingestellten Reihenfolge anzeigt (siehe Abschnitt 15.1).</li>
 <li>Den bereinigten Stand über <strong>Export</strong> als neue <code>_filtered.idx</code>-Datei speichern.</li>
 <li>Die exportierte Datei anschließend in Creo weiterverwenden.</li>
 </ol>
@@ -923,7 +924,9 @@ Der untersuchte Creo-Import sortiert diese IDs alphabetisch, nicht numerisch.
 Das vorherrschende Präfix bleibt erhalten; bei Kollisionen wird die Nummernbreite erhöht.
 Referenzen werden mit angepasst. Gemeinsam genutzte Assembly-Items erhalten den Rang ihrer ersten
 Instanz; eine beliebige Mischung über solche Gruppen hinweg ist damit nicht darstellbar.
-Manuelle Instanzen werden ebenfalls nummeriert, bleiben aber in ihrer gemeinsamen Assembly.</li>
+Manuelle Instanzen werden ebenfalls nummeriert, bleiben aber in ihrer gemeinsamen Assembly.
+Zusätzlich sortiert der Export die Bauteil-Definitionen (<code>&lt;Item&gt;</code> mit <code>&lt;ItemType&gt;single&lt;/ItemType&gt;</code>)
+unmittelbar vor der Baugruppe ebenfalls in dieselbe Reihenfolge wie den Modellbaum.</li>
 </ul>
 <blockquote>
 <p><strong>Achtung:</strong> ECAD-Inkremente verweisen auf die Original-IDs. Nach dem Umnummerieren passen sie nur
@@ -1378,6 +1381,11 @@ exportieren Sie beide Dateien erneut.</li>
 </ul>
 <hr>
 <h2 id="21-änderungen--versionshinweise">21. Änderungen / Versionshinweise</h2>
+<h3 id="01102026">01.10.2026</h3>
+<ul>
+<li><strong>Bereinigung des Repositories:</strong> Entfernung proprietärer PDF-Spezifikationen sowie tooling-spezifischer Ordner (<code>.gemini/</code>, <code>.codex/</code>) aus dem gesamten Git-Verlauf und Ergänzung von <code>.gitignore</code>.</li>
+<li><strong>Aktualisierung und Konsolidierung der Dokumentation:</strong> Vollständige Aktualisierung von <code>Anwenderdokumentation.md</code>, <code>Anwenderdokumentation.docx</code> und <code>help.html</code> bezüglich aller kürzlich hinzugekommenen Funktionen (Standardaktivierung der Creo-Neunummerierung, Ordnung von Bauteildefinitionen, Transaktionssicherheit beim Laden und Inkonsistenzwarnungen).</li>
+</ul>
 <h3 id="25092026">25.09.2026</h3>
 <ul>
 <li><p>Die Neunummerierung ist standardmäßig eingeschaltet; gespeicherte Benutzereinstellungen bleiben erhalten.</p>

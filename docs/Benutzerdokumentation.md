@@ -91,11 +91,27 @@ Wenn Sie häufig dieselben Routinen anwenden (z.B. bestimmte Vias löschen, Baut
 
 ---
 
-## 7. Exportieren der Daten
+## 7. Exportieren der Daten und erweiterte Optionen
 Nachdem alle (manuellen oder skript-basierten) Änderungen vorgenommen wurden, müssen die Daten in Ihr System zurückgespielt werden.
+
+### Export-Schaltflächen
 Oben rechts finden Sie (sobald eine Datei geladen wurde) die Export-Buttons:
 *   **💾 Inkrement:** Erstellt eine kleine, schlanke `_increment.idx` Datei, die *nur* Ihre neu getätigten Änderungen (Moves, Adds, Deletes) enthält.
 *   **💾 Export:** Nimmt die Original-Baseline, pflegt alle Ihre Änderungen physisch in die Struktur ein, löscht die entsprechenden Tags heraus und exportiert eine saubere, vollständige `_filtered.idx` Baseline.
+
+### Sortierung und ID-Neunummerierung für Creo
+*   **Persistente Baumreihenfolge:** Bauteile können im linken Modellbaum per Drag-and-Drop oder über **Ganz nach oben** / **Ganz nach unten** umsortiert werden. Diese Reihenfolge wird browserseitig persistent gespeichert und in beide Exporte übernommen.
+*   **IDs neu nummerieren (Reihenfolge für Creo):** Standardmäßig aktiviert. Vergibt Instanz-IDs und Assembly-Item-IDs fortlaufend mit führenden Nullen gemäß Modellbaum, damit Creo die Komponenten in der gewünschten Reihenfolge einliest. Bauteildefinitionen werden im XML ebenfalls nach Baumreihenfolge sortiert.
+*   **Inkrement-Konsistenz:** Ein Inkrement übernimmt automatisch dieselbe ID-Zuordnung der zuletzt exportierten Baseline derselben Sitzung.
+
+### MCAD-Namen in Exportdatei schreiben
+*   Unter **Hintmap & MCAD** existiert die Option **MCAD-Namen beim Export ins File schreiben** (nur aktiv bei zugeschalteten MCAD-Namen).
+*   Schreibt gemappte Namen und Materialnummern direkt in die XML-Datei. Gelöschte Bauteile (`DeletedInstanceName`) behalten zur Referenzierung ihren originalen ECAD-Namen.
+
+### Schutz durch Vorab-Validierung
+*   Jede Baseline oder Inkrement-Datei wird vor dem Import auf XML-Wohlgeformtheit, Schema-Integrität (`EDMDDataSet`, `IDX_MODE`, `IDX_VERSION`) und auflösbare Referenzen geprüft.
+*   Im Fehlerfall bricht der Import transaktionssicher ab, und ein detaillierter Fehlerbericht wird angezeigt; der bisherige Arbeitsstand im Viewer bleibt vollständig unverändert.
+*   Nachträglich geladene Inkremente werden an den Zeitstrahl angehängt, und Duplikate werden automatisch erkannt und übersprungen.
 
 ---
 *Ende der Dokumentation*

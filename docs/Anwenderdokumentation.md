@@ -2,7 +2,7 @@
 
 ## Advanced 3D IDX Viewer
 
-**Dokumentstand:** 24. September 2026
+**Dokumentstand:** 1. Oktober 2026
 **Anwendung:** `idx.html`
 
 Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.
@@ -83,8 +83,8 @@ Empfohlener Ablauf:
 3. Komponenten per Drag-and-drop oder mit **Ganz nach oben** beziehungsweise **Ganz nach unten** umsortieren.
 4. Zu entfernende Komponenten mit dem Papierkorb markieren.
 5. Das Ergebnis im 3D-Modell und unter **Aktuelle manuelle Änderungen** kontrollieren.
-6. Bei Bedarf **IDs neu nummerieren (Reihenfolge für Creo)** einschalten, damit Creo die Komponenten in der
-   eingestellten Reihenfolge anzeigt (siehe Abschnitt 15.1).
+6. Die Option **IDs neu nummerieren (Reihenfolge für Creo)** kontrollieren (standardmäßig eingeschaltet), damit Creo die
+   Komponenten in der im Modellbaum eingestellten Reihenfolge anzeigt (siehe Abschnitt 15.1).
 7. Den bereinigten Stand über **Export** als neue `_filtered.idx`-Datei speichern.
 8. Die exportierte Datei anschließend in Creo weiterverwenden.
 
@@ -790,6 +790,8 @@ Auswahl bleibt erhalten, auch wenn sie ausgeschaltet war.
   Referenzen werden mit angepasst. Gemeinsam genutzte Assembly-Items erhalten den Rang ihrer ersten
   Instanz; eine beliebige Mischung über solche Gruppen hinweg ist damit nicht darstellbar.
   Manuelle Instanzen werden ebenfalls nummeriert, bleiben aber in ihrer gemeinsamen Assembly.
+  Zusätzlich sortiert der Export die Bauteil-Definitionen (`<Item>` mit `<ItemType>single</ItemType>`)
+  unmittelbar vor der Baugruppe ebenfalls in dieselbe Reihenfolge wie den Modellbaum.
 
 > **Achtung:** ECAD-Inkremente verweisen auf die Original-IDs. Nach dem Umnummerieren passen sie nur
 > noch zu der neu exportierten Baseline. Schalten Sie die Option deshalb nur ein, wenn die Reihenfolge
@@ -1185,6 +1187,11 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 ---
 
 ## 21. Änderungen / Versionshinweise
+
+### 01.10.2026
+
+- **Bereinigung des Repositories:** Entfernung proprietärer PDF-Spezifikationen sowie tooling-spezifischer Ordner (`.gemini/`, `.codex/`) aus dem gesamten Git-Verlauf und Ergänzung von `.gitignore`.
+- **Aktualisierung und Konsolidierung der Dokumentation:** Vollständige Aktualisierung von `Anwenderdokumentation.md`, `Anwenderdokumentation.docx` und `help.html` bezüglich aller kürzlich hinzugekommenen Funktionen (Standardaktivierung der Creo-Neunummerierung, Ordnung von Bauteildefinitionen, Transaktionssicherheit beim Laden und Inkonsistenzwarnungen).
 
 ### 25.09.2026
 
