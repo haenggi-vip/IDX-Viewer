@@ -10,3 +10,10 @@ temp_objs/
 *.obj
 *.mtl
 *.prt
+
+# AI tooling folders
+.gemini/
+.codex/
+
+# Documentation binaries
+*.pdf
