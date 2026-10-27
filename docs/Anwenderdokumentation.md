@@ -63,7 +63,7 @@ Der Viewer zeigt IDX-Leiterplattendaten als dreidimensionales Modell. Er kann:
 
 ### Empfohlener Einsatz vor Creo: Komponenten umsortieren und bereinigen
 
-Der [Advanced 3D IDX Viewer](https://niclas85.github.io/IDX-Viewer/) kann verwendet werden, um eine IDX-Datei bereits
+Der [Advanced 3D IDX Viewer](https://haenggi-vip.github.io/IDX-Viewer/) kann verwendet werden, um eine IDX-Datei bereits
 vor dem Import in Creo aufzubereiten. Besonders geeignet ist er für:
 
 - das ergonomische Umsortieren von Komponenten per Drag-and-drop oder über die Reihenfolge-Schaltflächen,
@@ -111,7 +111,7 @@ Empfohlener Ablauf:
 ### 2.1 Bereitgestellte Webadresse
 
 Die öffentlich bereitgestellte Version ist unter
-[https://niclas85.github.io/IDX-Viewer/](https://niclas85.github.io/IDX-Viewer/) erreichbar. Öffnen Sie die Adresse
+[https://haenggi-vip.github.io/IDX-Viewer/](https://haenggi-vip.github.io/IDX-Viewer/) erreichbar. Öffnen Sie die Adresse
 in Microsoft Edge oder Google Chrome.
 
 ### 2.2 Lokal starten
