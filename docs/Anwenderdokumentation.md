@@ -932,7 +932,7 @@ delete()
 
 > **Sicherheitshinweis:** Führen Sie ein neues Makro zuerst ohne Exportbefehl aus. Prüfen Sie Auswahl und Änderungsliste, bevor Sie einen automatischen Export ergänzen.
 
-Die vollständige Befehlsliste steht in der ausführlichen [Benutzerdokumentation](Benutzerdokumentation.md#16-makro--und-skript-editor).
+Die vollständige Befehlsliste steht in der ausführlichen [Benutzerdokumentation](Benutzerdokumentation.md#6-automatisierung-über-makros--skripte).
 
 ---
 
@@ -1192,7 +1192,7 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 - **Drag-and-drop für IDX-Dateien:** Baseline- und Inkrementdateien (`.idx` / `.xml`) können direkt per Drag-and-drop in das Browserfenster gezogen werden.
 - **Direktlink `#hilfe` wiederhergestellt:** Beim Aufruf der URL mit `#hilfe` öffnet sich das integrierte Hilfefenster wieder automatisch.
 - **Link zu `haenggi-vip`:** Direktlink zum GitHub-Repository in der Kopfzeile des Viewers und im Hilfefenster ergänzt.
-- **Bereinigung & CI/CD:** Veraltete Skript- und DOCX-Duplikate entfernt; automatisierte Ausführung der JSDOM-Tests und schlankes Artefakt-Packaging in der GitHub-Pages-Pipeline ergänzt.
+- **Bereinigung:** Veraltete Skript- und DOCX-Duplikate (`main_script_fixed.js`, `Benutzerdokumentation*.docx`) entfernt.
 
 ### 01.10.2026
 

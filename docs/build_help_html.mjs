@@ -21,8 +21,8 @@ let article = await marked.parse(markdown, { gfm: true });
 const usedIds = new Map();
 
 article = article.replace(
-  /href="Benutzerdokumentation\.md(?:#[^"]*)?"/g,
-  'href="Anwenderdokumentation.docx"',
+  /href="Benutzerdokumentation\.md((?:#[^"]*)?)"/g,
+  'href="https://github.com/haenggi-vip/IDX-Viewer/blob/main/docs/Benutzerdokumentation.md$1" target="_blank" rel="noopener"',
 );
 
 article = article.replace(

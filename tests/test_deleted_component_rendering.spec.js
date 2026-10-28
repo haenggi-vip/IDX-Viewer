@@ -2,8 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-// Nur idx.html wird geprueft: main_script_fixed.js wird von der Anwendung
-// nirgends eingebunden und ist toter Code.
+// Prueft idx.html (die einzige Quelle des Viewer-Codes).
 test('deleted components are not converted into board cutouts in idx.html', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '..', 'idx.html'), 'utf8');
   const declaration = source.match(/const cutouts = components\.filter\([^;]+;/);
