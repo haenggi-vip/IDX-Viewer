@@ -1191,7 +1191,7 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 - **Response-Dateiname (`_response.idx`):** Der Export über **Response exportieren** vergibt nun den Dateinamen `_response.idx` (statt `_increment.idx`).
 - **Drag-and-drop für IDX-Dateien:** Baseline- und Inkrementdateien (`.idx` / `.xml`) können direkt per Drag-and-drop in das Browserfenster gezogen werden.
 - **Direktlink `#hilfe` wiederhergestellt:** Beim Aufruf der URL mit `#hilfe` öffnet sich das integrierte Hilfefenster wieder automatisch.
-- **Link zu `haenggi-vip`:** Direktlink zum GitHub-Repository in der Kopfzeile des Viewers und im Hilfefenster ergänzt.
+- **Link zu `haenggi.vip`:** Direktlink zur Webseite `haenggi.vip` in der Kopfzeile des Viewers und im Hilfefenster ergänzt.
 - **Bereinigung:** Veraltete Skript- und DOCX-Duplikate (`main_script_fixed.js`, `Benutzerdokumentation*.docx`) entfernt.
 
 ### 01.10.2026
