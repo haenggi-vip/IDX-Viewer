@@ -199,7 +199,7 @@
     </nav>
     <main class="help-article"><h1 id="anwenderdokumentation">Anwenderdokumentation</h1>
 <h2 id="advanced-3d-idx-viewer">Advanced 3D IDX Viewer</h2>
-<p><strong>Dokumentstand:</strong> 1. Oktober 2026
+<p><strong>Dokumentstand:</strong> 28. Oktober 2026
 <strong>Anwendung:</strong> <code>idx.html</code></p>
 <p>Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.</p>
 <p>Technische Details zum IDX-Datenmodell sind bewusst auf ein Minimum reduziert. Im Mittelpunkt stehen die Fragen:</p>
@@ -211,7 +211,7 @@
 <li>Wie exportiere ich mein Ergebnis?</li>
 <li>Was muss ich vor der Weitergabe kontrollieren?</li>
 </ul>
-<p>Eine ausführlichere technische Beschreibung befindet sich in der separaten <a href="Benutzerdokumentation_detailliert.docx">Benutzerdokumentation</a>.</p>
+<p>Eine ausführlichere technische Beschreibung befindet sich in der separaten <a href="Anwenderdokumentation.docx">Benutzerdokumentation</a>.</p>
 <hr>
 <h2 id="inhaltsverzeichnis">Inhaltsverzeichnis</h2>
 <ol>
@@ -441,7 +441,7 @@ Export-Schaltflächen, das zweite im Bereich <strong>Hintmap</strong> direkt unt
 <p>Eine Baseline ist immer der erste Schritt.</p>
 <ol>
 <li>Öffnen Sie rechts <strong>IDX Basis &amp; Inkremente</strong>.</li>
-<li>Klicken Sie bei <strong>IDX Datei (Basis)</strong> auf <strong>Datei auswählen</strong>.</li>
+<li>Klicken Sie bei <strong>IDX Datei (Basis)</strong> auf <strong>Datei auswählen</strong> (oder ziehen Sie die <code>.idx</code>- bzw. <code>.xml</code>-Datei per Drag-and-drop direkt in das Browserfenster).</li>
 <li>Wählen Sie die gewünschte <code>.idx</code>- oder <code>.xml</code>-Datei.</li>
 <li>Warten Sie, bis die Meldung <strong>Lade Daten...</strong> verschwindet.</li>
 </ol>
@@ -727,11 +727,10 @@ Eintrag im Änderungsprotokoll der exportierten Baseline.</p>
 <h3 id="neue-bauteile">Neue Bauteile</h3>
 <p>Neu hinzugefügte Bauteile werden derzeit häufig nur als Textzeile angezeigt. Für diese Zeilen kann eine einzelne Annehmen-/Ablehnen-Schaltfläche fehlen.</p>
 <h3 id="response-exportieren">Response exportieren</h3>
-<p>Mit <strong>Response exportieren</strong> können gespeicherte Ablehnungen ausgegeben werden.</p>
-<p>Der aktuelle Download trägt weiterhin einen Namen mit:</p>
-<pre><code class="language-text">_increment.idx
+<p>Mit <strong>Response exportieren</strong> können gespeicherte Ablehnungen und Gegenvorschläge ausgegeben werden.</p>
+<p>Der Download trägt den Dateinamen mit der Endung:</p>
+<pre><code class="language-text">_response.idx
 </code></pre>
-<p>Das ist auch dann möglich, wenn Sie den Response-Button verwendet haben. Entscheidend ist der Dateiinhalt.</p>
 <h3 id="empfohlene-kontrolle">Empfohlene Kontrolle</h3>
 <ol>
 <li>Betroffenen Inkrementschritt öffnen.</li>
@@ -964,7 +963,7 @@ Original-IDs und meldet das. Exportieren Sie dann die Baseline erneut, damit Bas
 zusammenpassen. Empfohlene Reihenfolge ist daher: erst <strong>Export</strong>, dann <strong>Inkrement</strong>.</p>
 <p><a class="help-image-link" href="screenshots/annotated_14_export.jpg" target="_blank" rel="noopener"><img src="screenshots/annotated_14_export.jpg" alt="Unterschied zwischen Inkrement und vollständigem Export" loading="lazy"></a></p>
 <h3 id="153-response">15.3 Response</h3>
-<p>Der Response-Export verwendet technisch denselben Downloadweg wie der Inkrementexport. Deshalb endet auch eine Response-Datei derzeit auf <code>_increment.idx</code>.</p>
+<p>Der Response-Export gibt gespeicherte Ablehnungen sowie etwaige eigene Gegenvorschläge aus und speichert die Datei unter dem Suffix <code>_response.idx</code> (bzw. <code>_response.xml</code>).</p>
 <h3 id="154-welchen-export-soll-ich-verwenden">15.4 Welchen Export soll ich verwenden?</h3>
 <table>
 <thead>
@@ -1097,7 +1096,7 @@ delete()
 <blockquote>
 <p><strong>Sicherheitshinweis:</strong> Führen Sie ein neues Makro zuerst ohne Exportbefehl aus. Prüfen Sie Auswahl und Änderungsliste, bevor Sie einen automatischen Export ergänzen.</p>
 </blockquote>
-<p>Die vollständige Befehlsliste steht in der ausführlichen <a href="Benutzerdokumentation_detailliert.docx">Benutzerdokumentation</a>.</p>
+<p>Die vollständige Befehlsliste steht in der ausführlichen <a href="Anwenderdokumentation.docx">Benutzerdokumentation</a>.</p>
 <hr>
 <h2 id="17-empfohlene-arbeitsabläufe">17. Empfohlene Arbeitsabläufe</h2>
 <h3 id="171-baseline-nur-ansehen">17.1 Baseline nur ansehen</h3>
@@ -1320,8 +1319,8 @@ exportieren Sie beide Dateien erneut.</li>
 <p>Der Viewer verwendet die Dateidaten. Kontrollieren Sie Datum und Uhrzeit der Dateien und laden Sie den Satz anschließend neu.</p>
 <h3 id="ablehnen-stellt-das-bauteil-nicht-zurück">Ablehnen stellt das Bauteil nicht zurück</h3>
 <p>Das ist das aktuelle Verhalten. Ablehnen speichert die Antwortentscheidung, führt aber kein automatisches Rückgängigmachen aus.</p>
-<h3 id="response-heißt-incrementidx">Response heißt <code>_increment.idx</code></h3>
-<p>Das ist der aktuell verwendete Dateiname. Prüfen Sie den Inhalt und die Vorgaben Ihres Übergabeprozesses.</p>
+<h3 id="unterschied-zwischen-incrementidx-und-responseidx">Unterschied zwischen <code>_increment.idx</code> und <code>_response.idx</code></h3>
+<p><strong>Inkrement</strong> exportiert unter <code>_increment.idx</code>, während <strong>Response exportieren</strong> unter <code>_response.idx</code> speichert. Beide Dateien nutzen technisch das IDX-Änderungsformat (<code>EDMDProcessInstructionSendChanges</code>) und enthalten sowohl etwaige Ablehnungen (<code>EDMDResponse</code>) als auch manuelle Änderungen.</p>
 <h3 id="keine-neuen-änderungen">„Keine neuen Änderungen!“</h3>
 <p>Es wurde keine eigene Verschiebung, Löschung, Ergänzung oder Ablehnung gefunden.</p>
 <h3 id="obj-wird-nicht-zugeordnet">OBJ wird nicht zugeordnet</h3>
@@ -1381,6 +1380,14 @@ exportieren Sie beide Dateien erneut.</li>
 </ul>
 <hr>
 <h2 id="21-änderungen--versionshinweise">21. Änderungen / Versionshinweise</h2>
+<h3 id="28102026">28.10.2026</h3>
+<ul>
+<li><strong>Response-Dateiname (<code>_response.idx</code>):</strong> Der Export über <strong>Response exportieren</strong> vergibt nun den Dateinamen <code>_response.idx</code> (statt <code>_increment.idx</code>).</li>
+<li><strong>Drag-and-drop für IDX-Dateien:</strong> Baseline- und Inkrementdateien (<code>.idx</code> / <code>.xml</code>) können direkt per Drag-and-drop in das Browserfenster gezogen werden.</li>
+<li><strong>Direktlink <code>#hilfe</code> wiederhergestellt:</strong> Beim Aufruf der URL mit <code>#hilfe</code> öffnet sich das integrierte Hilfefenster wieder automatisch.</li>
+<li><strong>Link zu <code>haenggi-vip</code>:</strong> Direktlink zum GitHub-Repository in der Kopfzeile des Viewers und im Hilfefenster ergänzt.</li>
+<li><strong>Bereinigung &amp; CI/CD:</strong> Veraltete Skript- und DOCX-Duplikate entfernt; automatisierte Ausführung der JSDOM-Tests und schlankes Artefakt-Packaging in der GitHub-Pages-Pipeline ergänzt.</li>
+</ul>
 <h3 id="01102026">01.10.2026</h3>
 <ul>
 <li><strong>Bereinigung des Repositories:</strong> Entfernung proprietärer PDF-Spezifikationen sowie tooling-spezifischer Ordner (<code>.gemini/</code>, <code>.codex/</code>) aus dem gesamten Git-Verlauf und Ergänzung von <code>.gitignore</code>.</li>

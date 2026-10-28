@@ -22,7 +22,7 @@ const usedIds = new Map();
 
 article = article.replace(
   /href="Benutzerdokumentation\.md(?:#[^"]*)?"/g,
-  'href="Benutzerdokumentation_detailliert.docx"',
+  'href="Anwenderdokumentation.docx"',
 );
 
 article = article.replace(

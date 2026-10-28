@@ -785,6 +785,31 @@
             else { header.classList.add('collapsed'); content.classList.add('collapsed'); }
         }
 
+        // --- DRAG & DROP FILE SUPPORT ---
+        window.addEventListener('dragover', e => {
+            if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            }
+        });
+        window.addEventListener('drop', e => {
+            const files = Array.from(e.dataTransfer?.files || []).filter(f => /\.(idx|xml)$/i.test(f.name));
+            if (files.length === 0) return;
+            e.preventDefault();
+            const isInc = originalXmlDoc && (files.length > 1 || files.some(f => /(_increment|_response)/i.test(f.name)));
+            const targetInput = document.getElementById(isInc ? 'inc-file-input' : 'file-input');
+            if (!targetInput) return;
+            const selected = isInc ? files : [files[0]];
+            try {
+                const dt = new DataTransfer();
+                selected.forEach(f => dt.items.add(f));
+                targetInput.files = dt.files;
+            } catch (_) {
+                Object.defineProperty(targetInput, 'files', { value: selected, configurable: true });
+            }
+            targetInput.dispatchEvent(new Event('change'));
+        });
+
         
         function updateHistoryUI() {
             const container = document.getElementById('history-timeline'), list = document.getElementById('history-list'), stepText = document.getElementById('hist-step-text');
@@ -1982,8 +2007,14 @@ function handleSelection(id, ctrl, shift) {
             const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'application/xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = originalFileName.replace(/.(idx|xml)$/i, '_filtered.$1'); a.click();
         });
 
+        let nextExportSuffix = '_increment';
         window.exportResponse = () => {
-            document.getElementById('export-inc-btn').click();
+            nextExportSuffix = '_response';
+            try {
+                document.getElementById('export-inc-btn').click();
+            } finally {
+                nextExportSuffix = '_increment';
+            }
         };
 
         document.getElementById('export-inc-btn').addEventListener('click', () => {
@@ -2067,7 +2098,8 @@ function handleSelection(id, ctrl, shift) {
                     alert("Achtung: Die Reihenfolge im Modellbaum wurde nach dem letzten Export geändert.\nDas Inkrement behält die Original-IDs. Exportieren Sie die Baseline erneut, damit Baseline und Inkrement zusammenpassen.");
                 }
             }
-            const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'application/xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = originalFileName.replace(/.(idx|xml)$/i, '_increment.$1'); a.click();
+            const suffix = nextExportSuffix || '_increment';
+            const blob = new Blob([new XMLSerializer().serializeToString(copy)], { type: 'application/xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = originalFileName.replace(/\.(idx|xml)$/i, `${suffix}.$1`); a.click();
         });
 
         document.getElementById('new-comp-file').addEventListener('change', e => { const file = e.target.files[0], nI = document.getElementById('new-comp-name'); if (file && (!nI.value || nI.value === "Manuell")) nI.value = file.name.replace(/.obj$/i, ''); });
@@ -2291,37 +2323,49 @@ function handleSelection(id, ctrl, shift) {
         const helpButton = document.getElementById('help-btn');
         const helpModal = document.getElementById('help-modal');
         const helpCloseButton = document.getElementById('help-close-btn');
+        const helpHash = '#hilfe';
         let helpPreviousFocus = null;
 
-        function openHelp() {
+        function openHelp(updateUrl = true) {
             helpPreviousFocus = document.activeElement;
             helpModal.classList.add('open');
             helpCloseButton.focus();
+            if (updateUrl && window.location.hash.toLowerCase() !== helpHash) {
+                try { window.history.replaceState(null, '', window.location.pathname + window.location.search + helpHash); } catch (_) {}
+            }
         }
 
-        function closeHelp() {
+        function closeHelp(updateUrl = true) {
             if (!helpModal.classList.contains('open')) return;
             helpModal.classList.remove('open');
+            if (updateUrl && window.location.hash.toLowerCase() === helpHash) {
+                try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch (_) {}
+            }
             if (helpPreviousFocus && typeof helpPreviousFocus.focus === 'function') {
                 helpPreviousFocus.focus();
             }
         }
 
-        helpButton.addEventListener('click', openHelp);
-        helpCloseButton.addEventListener('click', closeHelp);
+        helpButton.addEventListener('click', () => openHelp(true));
+        helpCloseButton.addEventListener('click', () => closeHelp(true));
         helpModal.addEventListener('click', event => {
-            if (event.target === helpModal) closeHelp();
+            if (event.target === helpModal) closeHelp(true);
         });
         window.addEventListener('message', event => {
-            if (event.data === 'idx-help-close') closeHelp();
+            if (event.data === 'idx-help-close') closeHelp(true);
+        });
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
+            else closeHelp(false);
         });
         window.addEventListener('keydown', event => {
             if (event.key === 'Escape' && helpModal.classList.contains('open')) {
                 event.preventDefault();
                 event.stopPropagation();
-                closeHelp();
+                closeHelp(true);
             }
         }, true);
+        if (window.location.hash.toLowerCase() === helpHash) openHelp(false);
 
 </script>
 </body>

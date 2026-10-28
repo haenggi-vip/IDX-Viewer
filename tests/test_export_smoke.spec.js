@@ -381,3 +381,29 @@ test('Bereits geladene Increments werden nicht doppelt angehaengt', () => {
   expect(handler).toContain('incrementHistory = previousState.incrementHistory.concat(newHistoryEntries)');
   expect(handler).toContain('Bereits geladen und daher übersprungen');
 });
+
+test('Response-Export speichert unter _response.idx und Increment unter _increment.idx', () => {
+  const window = setup();
+  window.__run('allComponents.find(c => c.uid === "ITEM_INST_1").acceptStatus = "rejected"');
+  window.exportResponse();
+  expect(window.__downloads).toHaveLength(1);
+  expect(window.__downloads[0].name).toBe('smoke_response.idx');
+
+  window.document.getElementById('export-inc-btn').click();
+  expect(window.__downloads).toHaveLength(2);
+  expect(window.__downloads[1].name).toBe('smoke_increment.idx');
+});
+
+test('Hilfe-Dialog oeffnet und schliesst ueber #hilfe Hash und Button', () => {
+  const window = loadViewer();
+  const modal = window.document.getElementById('help-modal');
+  expect(modal.classList.contains('open')).toBe(false);
+
+  window.document.getElementById('help-btn').click();
+  expect(modal.classList.contains('open')).toBe(true);
+  expect(window.location.hash).toBe('#hilfe');
+
+  window.document.getElementById('help-close-btn').click();
+  expect(modal.classList.contains('open')).toBe(false);
+  expect(window.location.hash).toBe('');
+});

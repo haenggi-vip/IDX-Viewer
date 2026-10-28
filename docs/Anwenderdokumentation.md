@@ -2,7 +2,7 @@
 
 ## Advanced 3D IDX Viewer
 
-**Dokumentstand:** 1. Oktober 2026
+**Dokumentstand:** 28. Oktober 2026
 **Anwendung:** `idx.html`
 
 Diese Anleitung erklärt die tägliche Bedienung des Advanced 3D IDX Viewers. Sie richtet sich an Anwenderinnen und Anwender aus ECAD, MCAD und der ECAD-/MCAD-Koordination.
@@ -245,7 +245,7 @@ Der Zeitstrahl zeigt:
 Eine Baseline ist immer der erste Schritt.
 
 1. Öffnen Sie rechts **IDX Basis & Inkremente**.
-2. Klicken Sie bei **IDX Datei (Basis)** auf **Datei auswählen**.
+2. Klicken Sie bei **IDX Datei (Basis)** auf **Datei auswählen** (oder ziehen Sie die `.idx`- bzw. `.xml`-Datei per Drag-and-drop direkt in das Browserfenster).
 3. Wählen Sie die gewünschte `.idx`- oder `.xml`-Datei.
 4. Warten Sie, bis die Meldung **Lade Daten...** verschwindet.
 
@@ -566,15 +566,13 @@ Neu hinzugefügte Bauteile werden derzeit häufig nur als Textzeile angezeigt. F
 
 ### Response exportieren
 
-Mit **Response exportieren** können gespeicherte Ablehnungen ausgegeben werden.
+Mit **Response exportieren** können gespeicherte Ablehnungen und Gegenvorschläge ausgegeben werden.
 
-Der aktuelle Download trägt weiterhin einen Namen mit:
+Der Download trägt den Dateinamen mit der Endung:
 
 ```text
-_increment.idx
+_response.idx
 ```
-
-Das ist auch dann möglich, wenn Sie den Response-Button verwendet haben. Entscheidend ist der Dateiinhalt.
 
 ### Empfohlene Kontrolle
 
@@ -840,7 +838,7 @@ zusammenpassen. Empfohlene Reihenfolge ist daher: erst **Export**, dann **Inkrem
 
 ### 15.3 Response
 
-Der Response-Export verwendet technisch denselben Downloadweg wie der Inkrementexport. Deshalb endet auch eine Response-Datei derzeit auf `_increment.idx`.
+Der Response-Export gibt gespeicherte Ablehnungen sowie etwaige eigene Gegenvorschläge aus und speichert die Datei unter dem Suffix `_response.idx` (bzw. `_response.xml`).
 
 ### 15.4 Welchen Export soll ich verwenden?
 
@@ -1115,9 +1113,9 @@ Der Viewer verwendet die Dateidaten. Kontrollieren Sie Datum und Uhrzeit der Dat
 
 Das ist das aktuelle Verhalten. Ablehnen speichert die Antwortentscheidung, führt aber kein automatisches Rückgängigmachen aus.
 
-### Response heißt `_increment.idx`
+### Unterschied zwischen `_increment.idx` und `_response.idx`
 
-Das ist der aktuell verwendete Dateiname. Prüfen Sie den Inhalt und die Vorgaben Ihres Übergabeprozesses.
+**Inkrement** exportiert unter `_increment.idx`, während **Response exportieren** unter `_response.idx` speichert. Beide Dateien nutzen technisch das IDX-Änderungsformat (`EDMDProcessInstructionSendChanges`) und enthalten sowohl etwaige Ablehnungen (`EDMDResponse`) als auch manuelle Änderungen.
 
 ### „Keine neuen Änderungen!“
 
@@ -1187,6 +1185,14 @@ Es gibt keine automatische Sitzungsspeicherung. Ergebnisse müssen vor dem Neula
 ---
 
 ## 21. Änderungen / Versionshinweise
+
+### 28.10.2026
+
+- **Response-Dateiname (`_response.idx`):** Der Export über **Response exportieren** vergibt nun den Dateinamen `_response.idx` (statt `_increment.idx`).
+- **Drag-and-drop für IDX-Dateien:** Baseline- und Inkrementdateien (`.idx` / `.xml`) können direkt per Drag-and-drop in das Browserfenster gezogen werden.
+- **Direktlink `#hilfe` wiederhergestellt:** Beim Aufruf der URL mit `#hilfe` öffnet sich das integrierte Hilfefenster wieder automatisch.
+- **Link zu `haenggi-vip`:** Direktlink zum GitHub-Repository in der Kopfzeile des Viewers und im Hilfefenster ergänzt.
+- **Bereinigung & CI/CD:** Veraltete Skript- und DOCX-Duplikate entfernt; automatisierte Ausführung der JSDOM-Tests und schlankes Artefakt-Packaging in der GitHub-Pages-Pipeline ergänzt.
 
 ### 01.10.2026
 
